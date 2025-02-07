@@ -9,9 +9,9 @@
 //   </StrictMode>,
 // )
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import App from './App'
-import Home from './pages/Home'
+import Home from './components/Home'
 import Tags from './pages/Tags'
 // import Register from './pages/Register'
 // import Login from './pages/Login'
