@@ -8,30 +8,38 @@
 //     <App />
 //   </StrictMode>,
 // )
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import App from './App'
-import Home from './components/Home'
-import Tags from './pages/Tags'
-// import Register from './pages/Register'
-// import Login from './pages/Login'
+// 声明式模式
+// import ReactDOM from 'react-dom/client'
+// import { BrowserRouter, Routes, Route } from 'react-router-dom'
+// import App from './App'
+// import Home from './components/Home'
+// import Tags from './pages/Tags'
+// ReactDOM.createRoot(document.getElementById('root')!).render(
+//     <BrowserRouter>
+//       <Routes>
+//         <Route path="/" element={<App />}>
+//           <Route path='home' element={<Home />} />
+//           <Route path="tags" element={<Tags />} />
+//         </Route>
+//       </Routes>
+//     </BrowserRouter>
+// )
+// v7写法不用到app.tsx但是需要使用app.tsx进行全局管理等
+// import { RouterProvider } from "react-router";
+// import { routes } from "./router/router";
+// import ReactDOM from "react-dom/client";
+// import { createBrowserRouter } from "react-router-dom";
+// ReactDOM.createRoot(document.getElementById("root")!).render(
+//   <RouterProvider router={createBrowserRouter(routes)} />
+// );
+// src/main.tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App'; // 全局容器组件
+import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-// const baseRouter = () => {
-  // return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<App />}>
-          {/* <Route path="/" element={<Navigate to="/home" />} /> */}
-          <Route path='home' element={<Home />} />
-          <Route path="tags" element={<Tags />} />
-        </Route>
-
-        {/* <Route path="/register" element={<Register />} /> */}
-        {/* <Route path="/login" element={<Login />} /> */}
-      </Routes>
-    </BrowserRouter>
-  // );
-// }
-// export default baseRouter
-)
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);

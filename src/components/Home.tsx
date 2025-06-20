@@ -10,7 +10,7 @@ interface HomeProps {
 }
 
 const Home: React.FC<HomeProps> = () => {
-  return <h1>Welcome to Home Page</h1>;
+  return <h1>Welcome to Home Page12</h1>;
 };
 
 export default Home;
