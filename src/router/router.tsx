@@ -2,6 +2,9 @@ import * as React from 'react';
 // import Home from '../components/Home';
 import Home from '@/pages/home/home';
 import NotFound from '@/pages/NotFound';
+import UseCallback from '@/pages/home/useCallback'
+import UseActionState from '@/pages/home/useActionState'
+import UseContext from '@/pages/home/useContent'
 import { createBrowserRouter, useRoutes } from 'react-router-dom';
 // import { RouteObject } from 'react-router-dom';
 // const routes = [
@@ -45,6 +48,18 @@ export const routes: RouteObject[] = [
     index: true,
     element: <Home />,
     // loader: homeLoader // 数据预加载
+  },
+  {
+    path:'useCallback',
+    element:<UseCallback/>
+  },
+  {
+    path:'useActionState',
+    element:<UseActionState/>
+  },
+  {
+    path:'useContext',
+    element:<UseContext></UseContext>
   },
   
   {

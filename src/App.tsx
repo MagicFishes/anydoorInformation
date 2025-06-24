@@ -6,7 +6,7 @@ import { routes } from './router/router'
 // import store from './store';            // 状态管理
 import ErrorBoundary from './components/ErrorBoundary'
 import RootLayout from './layouts/RootLayout' // 全局布局
-
+import ContentProvider from '@/pages/home/useContentCreat'
 // 创建路由实例
 const router = createBrowserRouter([
   {
@@ -38,8 +38,9 @@ export default function App() {
     // <AnalyticsTracker>
     // 路由提供者123
     <div>
-      
-    <RouterProvider router={router} />
+      <ContentProvider>
+        <RouterProvider router={router} />
+      </ContentProvider>
     </div>
     // </AnalyticsTracker>
     // </ErrorBoundary>
