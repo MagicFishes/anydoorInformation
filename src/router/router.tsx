@@ -40,8 +40,9 @@ import { createBrowserRouter, useRoutes } from 'react-router-dom';
 // ]
 // src/router.ts
 import { RouteObject } from 'react-router-dom';
-
-
+import UseOptimistic from '@/pages/home/useOptimistic'
+import UseReducer from '@/pages/home/useReducer'
+import UseSyncExternalStore from '@/pages/home/useSyncExternalStore'
 // 导出路由配置
 export const routes: RouteObject[] = [
   {
@@ -60,6 +61,18 @@ export const routes: RouteObject[] = [
   {
     path:'useContext',
     element:<UseContext></UseContext>
+  },
+  {
+    path:'useOptimistic',
+    element:<UseOptimistic></UseOptimistic>
+  },
+  {
+    path:'useReducer',
+    element:<UseReducer></UseReducer>
+  },
+  {
+    path:'useSyncExternalStore',
+    element:<UseSyncExternalStore></UseSyncExternalStore>
   },
   
   {
