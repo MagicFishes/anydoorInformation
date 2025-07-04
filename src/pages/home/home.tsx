@@ -7,7 +7,7 @@ interface ButtonProps {
   text: string
   onClick: (event: React.MouseEvent) => void
   disabled?: boolean
-  variant?: 'primary' | number // 修正拼写错误：varaiant → variant
+  variant?: 'primary' | number 
 }
 
 interface WelcomeProps {

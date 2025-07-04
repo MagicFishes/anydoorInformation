@@ -1,5 +1,13 @@
 import React, { useReducer } from 'react';
 
+// 定义 CartItem 类型
+type CartItem = {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+};
+
 // 1. 定义状态
 const initialState = {
   cartItems: [],
@@ -13,7 +21,33 @@ const REMOVE_FROM_CART = 'REMOVE_FROM_CART';
 const UPDATE_QUANTITY = 'UPDATE_QUANTITY';
 
 // 3. 创建 Reducer 函数
-const cartReducer = (state, action) => {
+interface CartState {
+  cartItems: CartItem[];
+  totalItems: number;
+  totalPrice: number;
+}
+
+interface AddToCartAction {
+  type: typeof ADD_TO_CART;
+  payload: CartItem;
+}
+
+interface RemoveFromCartAction {
+  type: typeof REMOVE_FROM_CART;
+  payload: number;
+}
+
+interface UpdateQuantityAction {
+  type: typeof UPDATE_QUANTITY;
+  payload: {
+    itemId: number;
+    quantity: number;
+  };
+}
+
+type CartAction = AddToCartAction | RemoveFromCartAction | UpdateQuantityAction;
+
+const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case ADD_TO_CART: {
       const newItem = action.payload;
@@ -78,15 +112,15 @@ const cartReducer = (state, action) => {
 function ShoppingCart() {
   const [state, dispatch] = useReducer(cartReducer, initialState);
 
-  const handleAddToCart = (item) => {
+  const handleAddToCart = (item: any) => {
     dispatch({ type: ADD_TO_CART, payload: item });
   };
 
-  const handleRemoveFromCart = (itemId) => {
+  const handleRemoveFromCart = (itemId: number) => {
     dispatch({ type: REMOVE_FROM_CART, payload: itemId });
   };
 
-  const handleUpdateQuantity = (itemId, quantity) => {
+  const handleUpdateQuantity = (itemId: number, quantity: number) => {
     dispatch({ type: UPDATE_QUANTITY, payload: { itemId, quantity } });
   };
 
@@ -111,7 +145,7 @@ function ShoppingCart() {
 
       <h2>购物车</h2>
       <ul>
-        {state.cartItems.map(item => (
+        {state.cartItems.map((item: CartItem) => (
           <li key={item.id}>
             {item.name} - 数量: {item.quantity} - 价格: {item.price * item.quantity}
             <button onClick={() => handleRemoveFromCart(item.id)}>删除</button>
@@ -119,7 +153,7 @@ function ShoppingCart() {
               type="number"
               value={item.quantity}
               min="1"
-              onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUpdateQuantity(item.id, parseInt(e.target.value))}
             />
           </li>
         ))}

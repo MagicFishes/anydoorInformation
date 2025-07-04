@@ -77,14 +77,28 @@ import { useSyncExternalStore, useState, useEffect } from 'react';
 
 export default function ChatIndicator() {
   const [isSubscribed, setIsSubscribed] = useState(true);
-  const [unsubscribe, setUnsubscribe] = useState(null);
-  const isOnline = useSyncExternalStore(isSubscribed ? subscribe : () => {}, getSnapshot); // 条件订阅
+  const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
+  interface SubscribeCallback {
+    (callback: () => void): () => void;
+  }
+
+  const subscribe: SubscribeCallback = (callback) => {
+    window.addEventListener('online', callback);
+    window.addEventListener('offline', callback);
+    return () => {
+      window.removeEventListener('online', callback);
+      window.removeEventListener('offline', callback);
+    };
+  };
+
+  const emptySubscribe = (_callback: () => void) => () => {};
+  const isOnline = useSyncExternalStore(isSubscribed ? subscribe : emptySubscribe, getSnapshot); // 条件订阅
 
   useEffect(() => {
-    let unsub = null;
+    let unsub: (() => void) | null = null;
     if (isSubscribed) {
       unsub = subscribe(forceUpdate);
-      setUnsubscribe(() => unsub);
+      setUnsubscribe(unsub);
     }
 
     return () => {
@@ -108,15 +122,6 @@ export default function ChatIndicator() {
 
   function getSnapshot() {
     return navigator.onLine;
-  }
-
-  function subscribe(callback) {
-    window.addEventListener('online', callback);
-    window.addEventListener('offline', callback);
-    return () => {
-      window.removeEventListener('online', callback);
-      window.removeEventListener('offline', callback);
-    };
   }
 
   return (

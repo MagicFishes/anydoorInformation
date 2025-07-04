@@ -7,6 +7,8 @@
     "esModuleInterop": true,                  // 启用 ES 模块的互操作性
     "skipLibCheck": true,                     // 跳过库文件检查
     "forceConsistentCasingInFileNames": true, // 强制文件名一致性
+    //  "noUnusedLocals": false,      //如果存在未使用的局部变量，编译器会发出一个错误。
+    // "noUnusedParameters": false,  //如果存在未使用的函数参数，编译器会发出一个错误。
     "outDir": "./dist",  // 输出目录，可以将生成的所有文件统一放在一个文件夹中
     "sourceMap": false ,  // 禁用生成 *.js.map 文件
     "baseUrl": ".",
@@ -21,7 +23,7 @@
     // "jsx": "preserve"
   },
   "files": [],
-  "include": ["src/**/*"], // 确保包含 src 文件夹中的文件
+  "include": ["src/**/*","auto-imports.d.ts"], // 确保包含 src 文件夹中的文件
   // "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx"],
   "exclude": [
     "dist",
