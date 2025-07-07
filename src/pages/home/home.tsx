@@ -222,7 +222,7 @@ export default function HomePage() {
     console.log('点击')
   }, [])
   return (
-    <div className={classNames(styles['local-btn'], 'p-6 bg-red-600')}>
+    <div className={classNames(styles['local-btn'], 'p-6 ')}>
       <T text="点击更新标题" onClick={handleClick} variant="primary" />
 
       <div className="my-6 p-4 bg-white rounded shadow">

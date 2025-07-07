@@ -8,6 +8,7 @@ import { setIsMobile } from '@/features/appSlice/app'
 import { RootState } from './store/store'
 import {
   createBrowserRouter,
+  RouteObject,
   RouterProvider,
   useRoutes,
 } from 'react-router-dom'
@@ -31,7 +32,6 @@ export default function App() {
     }
   }, [dispatch])
 
-  // const element = useRoutes(generateRoutes(isMobile))
   const router = useMemo(() => {
     return createBrowserRouter(generateRoutes(isMobile))
   }, [isMobile])
@@ -47,35 +47,6 @@ export default function App() {
     </Provider>
   )
 }
-
-// import { Provider } from 'react-redux'
-// import { RouterProvider } from 'react-router-dom'
-// import { persistor, store } from './store/store'
-// import RootLayout from './layouts/RootLayout'
-// import { routes } from './router/router'
-// import { createBrowserRouter } from 'react-router-dom'
-// import { PersistGate } from 'redux-persist/integration/react'
-
-// const router = createBrowserRouter([
-//   {
-//     path: '/',
-//     // element: <RootLayout><React.Fragment /></RootLayout>,
-//     children: routes,
-//   },
-// ])
-
-// export default function App() {
-
-//   return (
-//     <Provider store={store}>
-//       <PersistGate loading={null} persistor={persistor}>
-//         <RootLayout>
-//           <RouterProvider router={router} />
-//         </RootLayout>
-//       </PersistGate>
-//     </Provider>
-//   )
-// }
 
 // import { RouterProvider } from 'react-router-dom'
 // import { createBrowserRouter } from 'react-router-dom'

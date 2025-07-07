@@ -18,8 +18,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
   );
 }
 
-
-
 // import { persistor } from '@/store/store'
 // import React from 'react'
 // import { Outlet } from 'react-router-dom'

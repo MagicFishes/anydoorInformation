@@ -1,6 +1,6 @@
 
 import { RouteObject } from 'react-router-dom';
-import NotFound from '@/pages/NotFound';
+import NotFound from '@/pages/NotFound/NotFound';
 import Computer from '@/router/computer';
 import Mobile from '@/router/mobile';
 
