@@ -40,7 +40,7 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
   return [
     {
       path: '/',
-      // element: <RootLayout/>,
+      element: <RootLayout/>,
       children: (routes as CustomRouteObject[]).filter(route => {
         if (route.meta && route.meta.isMobile !== undefined) {
           return route.meta.isMobile === isMobile;

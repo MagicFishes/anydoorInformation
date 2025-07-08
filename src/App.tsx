@@ -35,14 +35,14 @@ export default function App() {
   const router = useMemo(() => {
     return createBrowserRouter(generateRoutes(isMobile))
   }, [isMobile])
-
+  console.log("router",router)
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         {/* {element} */}
-        <RootLayout>
+        {/* <RootLayout> */}
           <RouterProvider router={router} />
-        </RootLayout>
+        {/* </RootLayout> */}
       </PersistGate>
     </Provider>
   )

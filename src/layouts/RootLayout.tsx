@@ -7,14 +7,14 @@ import ComputerLayout from './ComputerLayout';
 import MobileLayout from './MobileLayout';
 
 interface RootLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 export default function RootLayout({ children }: RootLayoutProps) {
   const isMobile = useSelector((state: RootState) => state.app.isMobile);
   return isMobile ? (
-    <MobileLayout>{children}</MobileLayout>
+    <MobileLayout><Outlet></Outlet></MobileLayout>
   ) : (
-    <ComputerLayout>{children}</ComputerLayout>
+    <ComputerLayout><Outlet></Outlet></ComputerLayout>
   );
 }
 

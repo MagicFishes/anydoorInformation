@@ -46,15 +46,14 @@ function ComputerLayout({ children }: ComputerLayoutProps) {
   }, [showTab])
 
   // 获取当前路由
-  // const location = useLocation()
+  const location = useLocation()
   // 不显示侧边栏的页面
-  // const unShowSiderTabArr = ['/login']
-  // const isShowSiderTab = unShowSiderTabArr.includes(location?.pathname)
+  const unShowSiderTabArr = ['/login']
+  const isShowSiderTab = unShowSiderTabArr.includes(location.pathname)
   return (
     <div className="flex w-full min-h-screen">
-      {
-        <div
-          className={`
+      {!isShowSiderTab&&<div
+        className={`
           p-[.5rem]
           relative
           h-full
@@ -62,30 +61,29 @@ function ComputerLayout({ children }: ComputerLayoutProps) {
           duration-500
           ${showTab ? 'w-[20%]' : 'w-[3%]'}
         `}
-        >
-          <div className="flex flex-1">
-            {showTab && contentVisible && <SidebarContent />}
-            {showTab ? (
+      >
+        <div className="flex flex-1">
+          {showTab && contentVisible && <SidebarContent />}
+          {showTab ? (
+            <div
+              onClick={() => setShowTab(!showTab)}
+              className="absolute bg-blue-500 p-[.2rem] px-[.2rem] text-white rounded-[20rem] cursor-pointer right-[.5rem] top-[.5rem]"
+            >
+              {showTab ? '隐藏' : '展开'}
+            </div>
+          ) : (
+            !showTab &&
+            tabContentVisible && (
               <div
                 onClick={() => setShowTab(!showTab)}
-                className="absolute bg-blue-500 p-[.2rem] px-[.2rem] text-white rounded-[20rem] cursor-pointer right-[.5rem] top-[.5rem]"
+                className="w-[100%] flex justify-evenly items-center text-[#000000] cursor-pointer"
               >
-                {showTab ? '隐藏' : '展开'}
+                展开
               </div>
-            ) : (
-              !showTab &&
-              tabContentVisible && (
-                <div
-                  onClick={() => setShowTab(!showTab)}
-                  className="w-[100%] flex justify-evenly items-center text-[#000000] cursor-pointer"
-                >
-                  展开
-                </div>
-              )
-            )}
-          </div>
+            )
+          )}
         </div>
-      }
+      </div>}
       <div className="transition-all duration-[2s] flex-1">{children}</div>
     </div>
   )
