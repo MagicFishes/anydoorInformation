@@ -7,8 +7,14 @@ import UseOptimistic from '@/pages/home/useOptimistic'
 import UseReducer from '@/pages/home/useReducer'
 import UseSyncExternalStore from '@/pages/home/useSyncExternalStore'
 import Login from '@/pages/Login/Login'
+import Text from '@/pages/text/text'
 export const homeRoutes: RouteObject[] = [
 
+  {
+    // index:true,
+    path:'text',
+    element:<Text></Text>
+  },
   {
     // index:true,
     path:'login',

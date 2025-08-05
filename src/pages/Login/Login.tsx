@@ -3,6 +3,7 @@ import { UserOutlined, UnlockOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { User } from '@/api/User'
 export default function Login() {
+  
   const [phone, setPhone] = useState('')
   const [password, setPassWord] = useState('')
   const [time, setTime] = useState<number>(0)
@@ -43,7 +44,9 @@ export default function Login() {
   return (
     <>
       <div className=" flex  h-[100%]  w-[100%] ">
-        <div className=" w-[60%]"></div>
+        <div className=" w-[60%]">
+
+        </div>
         <div className=" flex-col  flex-1  p-[5rem] h-[100%]  flex  justify-center">
           <div className=" w-[80%] flex flex-col justify-evenly items-center">
             <h1 className=" font-bold text-[25px]  tracking-[2px]   ">
