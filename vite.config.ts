@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
         dts: './auto-imports.d.ts', // 生成 .d.ts 文件
         resolvers: [
           AntdResolver({
-            prefix: 'A', // 自定义前缀
+            // prefix: 'A', // 自定义前缀
             //  packageName: 'antd-v5' 包别名引入
           }),
         ],

@@ -39,12 +39,11 @@ import App from './App'; // 全局容器组件
 import './index.css';
 import { Provider } from 'react-redux';
 import { store } from './store/store';
-
+import 'antd/dist/reset.css'; // Ant Design 全局样式重置
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
   <React.StrictMode>
     <App />
   </React.StrictMode>
     </Provider>
-
 );

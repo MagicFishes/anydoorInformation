@@ -52,7 +52,7 @@ function ComputerLayout({ children }: ComputerLayoutProps) {
   const isShowSiderTab = unShowSiderTabArr.includes(location.pathname)
   return (
     <div className="flex w-full min-h-screen">
-      {!isShowSiderTab&&<div
+      {/* {!isShowSiderTab&&<div
         className={`
           p-[.5rem]
           relative
@@ -83,7 +83,7 @@ function ComputerLayout({ children }: ComputerLayoutProps) {
             )
           )}
         </div>
-      </div>}
+      </div>} */}
       <div className="transition-all duration-[2s] flex-1">{children}</div>
     </div>
   )

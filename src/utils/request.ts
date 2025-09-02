@@ -1,14 +1,17 @@
 import axios, { AxiosResponse, InternalAxiosRequestConfig, RawAxiosRequestHeaders } from 'axios'
-import { error } from 'console'
 
 interface ResponseType<T = any> {
   code: number
   message: string
-  data: T
+  data: T,
+  success:Boolean
 }
 const axiosInstance = axios.create({
-  baseURL: 'https://api.example.com',
+  baseURL: import.meta.env.VITE_BASE_URL,
   timeout: 100000,
+  headers:{
+    'Content-Type': 'application/json',
+  }
 })
 // 前置
 axiosInstance.interceptors.request.use(

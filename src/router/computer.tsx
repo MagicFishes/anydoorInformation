@@ -4,7 +4,7 @@ const Computer: RouteObject[] = [
       // 重定向
   {
     path:'/',
-    element: <Navigate to='text' replace />
+    element: <Navigate to='login' replace />
   },
   // {
   //   path:'/',

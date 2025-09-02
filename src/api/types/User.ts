@@ -1,10 +1,11 @@
 // 参数接口
 export interface LoginParams {
   /*账号 */
-  account: string;
+  phone: string;
 
   /*验证码 */
-  verifyCode: string;
+  verifyCode?: string;
+  password:string
 }
 
 // 响应接口
@@ -41,4 +42,10 @@ export interface LoginRes {
     /*过期时间 */
     expires: string;
   };
+}
+// 参数接口
+export interface RegisterParams {
+  // 手机号
+  phone:string,
+  password:string
 }
