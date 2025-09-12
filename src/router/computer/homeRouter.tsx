@@ -8,6 +8,7 @@ import UseReducer from '@/pages/home/useReducer'
 import UseSyncExternalStore from '@/pages/home/useSyncExternalStore'
 import Login from '@/pages/Login/Login'
 import Text from '@/pages/text/text'
+import HomePage from '@/pages/HomePage/index'
 export const homeRoutes: RouteObject[] = [
 
   {
@@ -19,6 +20,11 @@ export const homeRoutes: RouteObject[] = [
     // index:true,
     path:'login',
     element:<Login></Login>
+  },
+
+  {
+    path:'homePage',
+    element:<HomePage></HomePage>
   },
   {
     path:'home',
