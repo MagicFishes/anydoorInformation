@@ -15,12 +15,14 @@
     "antd": "^5.26.3",
     "axios": "^1.7.9",
     "classnames": "^2.5.1",
+    "gsap": "^3.13.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.62.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.1.5",
     "redux-persist": "^6.0.0",
+    "three": "^0.180.0",
     "zustand": "^5.0.6"
   },
   "devDependencies": {
@@ -29,6 +31,7 @@
     "@types/node": "^22.13.1",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
+    "@types/three": "^0.180.0",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitejs/plugin-react-swc": "^3.7.2",
     "autoprefixer": "^10.4.21",
