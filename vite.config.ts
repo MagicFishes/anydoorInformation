@@ -23,7 +23,6 @@ export default defineConfig(({ mode }) => {
         imports: [
           'react',
           'react-router-dom',
-          'react-router',
           {
             'react-redux': ['useSelector', 'useDispatch'], // 导入 useSelector 和 useDispatch
           },
@@ -44,13 +43,41 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     build: {
-        // outDir: "dist"+(env==='GORYM'?'':'_'+env),
-      outDir: 'dist', // 根据需求修改输出目录
-      emptyOutDir: true, // 打包前清空输出目录
-      
+      outDir: 'dist',
+      emptyOutDir: true,
+      sourcemap: mode !== 'production', // 生产环境关闭 sourcemap
+      chunkSizeWarningLimit: 1000, // 提高警告阈值
+      rollupOptions: {
+        output: {
+          // 代码分割策略
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'redux-vendor': ['@reduxjs/toolkit', 'react-redux', 'redux-persist'],
+            'ui-vendor': ['antd', '@ant-design/icons'],
+          },
+          // 优化文件命名
+          chunkFileNames: 'js/[name]-[hash].js',
+          entryFileNames: 'js/[name]-[hash].js',
+          assetFileNames: '[ext]/[name]-[hash].[ext]',
+        },
+      },
+      // 压缩配置
+      minify: 'esbuild',
+      // CSS 代码分割
+      cssCodeSplit: true,
     },
     esbuild: {
       drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
+    // 性能优化
+    optimizeDeps: {
+      include: ['react', 'react-dom', 'react-router-dom', '@reduxjs/toolkit', 'antd'],
+    },
+    // 服务器配置
+    server: {
+      port: 3000,
+      open: true,
+      cors: true,
     }
   }
 })

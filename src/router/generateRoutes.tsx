@@ -1,61 +1,86 @@
-import { RouteObject } from 'react-router-dom';
-import { routes } from './router';
-import RootLayout from '../layouts/RootLayout';
+import { Navigate } from 'react-router-dom'
+import { lazy } from 'react'
+import { RouteObject } from './types'
+import AdminLayout from '@/layouts/AdminLayout'
+import BasicLayout from '@/layouts/BasicLayout'
+import MobileLayout from '@/layouts/MobileLayout'
+import { computerModules } from './computer'
+import { mobileModules } from './mobile/index'
+import NotFound from '@/pages/NotFound/NotFound'
 
-// Extend RouteObject to include optional meta property
-// interface RouteMeta {
-//   isMobile?: boolean;
-//   [key: string]: any;
-// }
-// type CustomRouteObject = RouteObject & {
-//   meta?: RouteMeta;
-// };
-// export const generateRoutes = (isMobile: boolean): RouteObject[] => {
-//  const childRoutes = (routes as CustomRouteObject[]).filter(route => {
-//     if (route.meta && route.meta.isMobile !== undefined) {
-//       return route.meta.isMobile === isMobile;
-//     }
-//     return true; // 没有 meta 信息的路由都显示
-//   });
+// 独立页面
+const Login = lazy(() => import('@/pages/Login/Login'))
 
-//   return [
-//     {
-//       path: '/',
-//       element: <RootLayout>{childRoutes.map(route => route.element)}</RootLayout>,
-//       children: childRoutes,
-//     },
-//   ];
-// };
-
-
-
-interface RouteMeta {
-  isMobile?: boolean;
-  [key: string]: any;
-}
-type CustomRouteObject = RouteObject & {
-  meta?: RouteMeta;
-};
+/**
+ * 根据设备类型生成不同的路由配置
+ * @param isMobile - 是否为移动端
+ */
 export const generateRoutes = (isMobile: boolean): RouteObject[] => {
-  return [
-    {
-      path: '/',
-      element: <RootLayout/>,
-      children: (routes as CustomRouteObject[]).filter(route => {
-        if (route.meta && route.meta.isMobile !== undefined) {
-          return route.meta.isMobile === isMobile;
-        }
-        return true; // 没有 meta 信息的路由都显示
-      }),
-    },
-  ];
-};
+  if (isMobile) {
+    // 移动端路由配置
+    return [
+      // 根路径重定向到移动端首页
+      {
+        path: '/',
+        element: <Navigate to="/mobile" replace />
+      },
+      // 移动端主路由
+      {
+        path: '/mobile',
+        element: <MobileLayout />,
+        children: mobileModules
+      },
+      // 移动端也可以访问登录页
+      {
+        path: '/login',
+        element: <Login />
+      },
+      // 404
+      {
+        path: '*',
+        element: <NotFound />
+      }
+    ]
+  } else {
+    // PC端路由配置
+    return [
+      // 根路径重定向到后台首页
+      {
+        path: '/',
+        element: <Navigate to="/admin/home/page" replace />
+      },
+      // 后台管理路由（带侧边栏）
+      {
+        path: '/admin',
+        element: <AdminLayout />,
+        children: computerModules
+      },
+      // 普通页面路由（无侧边栏）
+      {
+        path: '/pages',
+        element: <BasicLayout />,
+        children: [
+          {
+            path: 'about',
+            element: <div className="p-8">关于我们页面</div>
+          },
+          {
+            path: 'contact',
+            element: <div className="p-8">联系我们页面</div>
+          }
+        ]
+      },
+      // 登录页
+      {
+        path: '/login',
+        element: <Login />
+      },
+      // 404
+      {
+        path: '*',
+        element: <NotFound />
+      }
+    ]
+  }
+}
 
-// export const generateRoutes = (isMobile: boolean): CustomRouteObject[] => {
-//   return (routes as CustomRouteObject[]).filter(route => {
-//     if (route.meta && route.meta.isMobile !== undefined) {
-//       return route.meta.isMobile === isMobile;
-//     }
-//     return true; // 没有 meta 信息的路由都显示
-//   });
-// };
