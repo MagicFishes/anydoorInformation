@@ -35,6 +35,15 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
         path: '/login',
         element: <Login />
       },
+      // 🔥 路由守卫：捕获 PC 端路径并重定向到移动端首页
+      {
+        path: '/admin/*',
+        element: <Navigate to="/mobile" replace />
+      },
+      {
+        path: '/pages/*',
+        element: <Navigate to="/mobile" replace />
+      },
       // 404
       {
         path: '*',
@@ -74,6 +83,11 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
       {
         path: '/login',
         element: <Login />
+      },
+      // 🔥 路由守卫：捕获移动端路径并重定向到 PC 端首页
+      {
+        path: '/mobile/*',
+        element: <Navigate to="/admin/home/page" replace />
       },
       // 404
       {

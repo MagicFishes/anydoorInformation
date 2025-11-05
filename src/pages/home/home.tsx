@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './home.module.css'
 import classNames from 'classnames'
-import HomeUseMemo from '@/components/homeUseMemo'
 // 类型定义放在组件外部（避免重复声明）
 interface ButtonProps {
   text: string
@@ -110,7 +109,7 @@ const HomeUseMemo1 = React.memo(
 )
 const HomeUseMemo2 = React.memo(() => {
   console.log('重新渲染homeusememo')
-  return <HomeUseMemo></HomeUseMemo>
+  return <div>HomeUseMemo 示例</div>
 })
 export default function HomePage() {
   //   // ✅ 正确：Hook 在函数组件内部调用

@@ -4,6 +4,7 @@ import { RouteObject } from '../types'
 
 // 路由懒加载 - 测试模块
 const Text = lazy(() => import('@/pages/text/text'))
+const RouteTest = lazy(() => import('@/pages/DevTools/RouteTest'))
 
 // 测试模块路由配置
 export const testModule: RouteObject = {
@@ -24,6 +25,14 @@ export const testModule: RouteObject = {
       meta: {
         key: 'test-text',
         label: '测试页面'
+      }
+    },
+    {
+      path: 'route-test',
+      element: <RouteTest />,
+      meta: {
+        key: 'test-route',
+        label: '路由跨端测试'
       }
     }
   ]
