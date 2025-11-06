@@ -3,6 +3,7 @@ import { lazy } from 'react'
 import { RouteObject } from '../types'
 
 // 路由懒加载 - Hooks 学习模块
+const UseState = lazy(() => import('@/pages/home/useState'))
 const UseCallback = lazy(() => import('@/pages/home/useCallback'))
 const UseActionState = lazy(() => import('@/pages/home/useActionState'))
 const UseContext = lazy(() => import('@/pages/home/useContent'))
@@ -21,7 +22,12 @@ export const hooksModule: RouteObject = {
   children: [
     {
       index: true,
-      element: <Navigate to="useCallback" replace />
+      element: <Navigate to="useState" replace />
+    },
+    {
+      path: 'useState',
+      element: <UseState />,
+      meta: { key: 'hooks-useState', label: 'useState' }
     },
     {
       path: 'useCallback',
