@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 //自定义hook
 const useInput=(defaultValue:string)=>{
     const [value,setValue]=useState(defaultValue)
@@ -9,6 +9,43 @@ const useInput=(defaultValue:string)=>{
     const reset = (resetValue: string = '') => setValue(resetValue)
     return [ value, bing, reset ] as const
 }
+
+
+
+// 自定义对象hook
+const useObject=(defaultValue:Record<string,any>)=>{
+    const [value,setValue]=useState(defaultValue)
+    // 直接赋值
+    const updateValue=(newObject:Record<string,any>)=>{
+        setValue((prev:Record<string,any>)=>({...prev,...newObject}))
+    }
+    const resetValue=()=>{
+        setValue(defaultValue)
+    }
+    // const updateValue=(newObject:object)=>{
+    //     setValue(prev=>({...prev,...newObject}))
+    // }
+    return [value,updateValue,resetValue] as const
+}
+//自定义数组hook
+const useArrHook=(defalutValue:any[])=>{
+    const [value,setValue]=useState(defalutValue)
+    // 增删改查
+    const addItem=(item:any)=>{
+        setValue(prev=>[...prev,item])
+    }
+    const removeItem=(index:number)=>{
+        setValue(prev=>prev.filter((_,i)=>i!==index))
+    }
+    const updateItem=(index:number,item:any)=>{
+        setValue(prev=>prev.map((i,index)=>index===index?item:i))
+    }
+    const getItem=(index:number)=>{
+        return value[index]
+    }
+    return [value,addItem,removeItem,updateItem,getItem] as const
+}
+
 /**
  * useState 实战示例集合
  * 每个示例都可以独立运行，展示不同的 useState 用法
@@ -50,20 +87,56 @@ const BasicCounter = () => {
 const FunctionalUpdateCounter = () => {
   const [count, setCount] = useState(0)
 
+  // 💡 使用 useEffect 监听状态变化，获取更新后的值
+  useEffect(() => {
+    console.log('✅ count 已更新为:', count)
+  }, [count])
+
   // ❌ 错误示例：快速点击时可能丢失更新
   const badIncrement = () => {
     setCount(count + 1)
+    console.log("count",count)  // 打印的是旧值，因为状态更新是异步的
     setCount(count + 1)
+    console.log("count",count)  // 仍然是旧值
     setCount(count + 1)
-    // 结果：只增加 1（不是 3）
+    console.log("count",count)  // 仍然是旧值
+    // 结果：只增加 1（不是 3），因为三次都基于同一个旧值 count
   }
 
   // ✅ 正确示例：使用函数式更新
   const goodIncrement = () => {
     setCount(prev => prev + 1)
+    console.log("count",count)  // ⚠️ 注意：这里打印的仍然是旧值！
     setCount(prev => prev + 1)
+    console.log("count",count)  // ⚠️ 仍然是旧值！
     setCount(prev => prev + 1)
-    // 结果：增加 3
+    console.log("count",count)  // ⚠️ 仍然是旧值！
+    // 结果：count 会增加 3（在下次渲染时），但这里的 console.log 都打印旧值
+    // 
+    // 原因解释：
+    // 1. React 的状态更新是异步的，不会立即更新 count 变量
+    // 2. setCount 只是"安排"了一次更新，实际更新发生在下次渲染时
+    // 3. 函数式更新 (prev => prev + 1) 只是确保更新基于最新状态，但当前函数中的 count 变量仍然是旧值
+    // 4. 这是因为 JavaScript 的闭包机制：函数执行时捕获的是当前的 count 值
+  }
+
+  // 💡 如何获取更新后的值？
+  // 方法1：使用 useEffect 监听状态变化
+  // useEffect(() => {
+  //   console.log('count 已更新为:', count)
+  // }, [count])
+
+  // 方法2：在函数式更新中计算并返回新值
+  const incrementWithCalculation = () => {
+    let newCount = count
+    setCount(prev => {
+      newCount = prev + 1
+      console.log('更新后的值:', newCount)  // 这里可以获取到新值
+      return newCount
+    })
+    console.log('函数中的 count:', count)  // 但这里仍然是旧值
+    // 注意：即使这样，函数执行完毕后 count 变量仍然是旧值
+    // 只有在组件重新渲染后，count 才会更新
   }
 
   return (
@@ -84,9 +157,18 @@ const FunctionalUpdateCounter = () => {
           ✅ 正确方式（点击+3）
         </button>
       </div>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-gray-600 mb-2">
         说明：快速连续调用 setState 时，使用函数式更新可以确保每次更新都基于最新值
       </p>
+      <div className="p-3 bg-yellow-50 rounded text-xs text-gray-700">
+        <p className="font-semibold mb-1">⚠️ 重要理解：</p>
+        <ul className="list-disc list-inside space-y-1">
+          <li>setState 是异步的，调用后不会立即更新 count 变量</li>
+          <li>函数式更新 (prev =&gt; prev + 1) 只是确保更新基于最新状态，但当前函数中的 count 仍然是旧值</li>
+          <li>要获取更新后的值，请使用 useEffect 监听状态变化（查看控制台）</li>
+          <li>状态更新会在下次渲染时生效，组件重新渲染后 count 才会更新</li>
+        </ul>
+      </div>
     </div>
   )
 }
@@ -315,6 +397,8 @@ const FormExample = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
+    console.log("e.target",e.target)
+    console.log(name, value, type, checked)
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
