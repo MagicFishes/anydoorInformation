@@ -10,6 +10,8 @@ const UseContext = lazy(() => import('@/pages/home/useContent'))
 const UseOptimistic = lazy(() => import('@/pages/home/useOptimistic'))
 const UseReducer = lazy(() => import('@/pages/home/useReducer'))
 const UseSyncExternalStore = lazy(() => import('@/pages/home/useSyncExternalStore'))
+const UseEffect = lazy(() => import('@/pages/home/useEffect'))
+const UseMemoUseRef = lazy(() => import('@/pages/home/useMemoUseRef'))
 
 // Hooks 学习模块路由配置
 export const hooksModule: RouteObject = {
@@ -58,6 +60,16 @@ export const hooksModule: RouteObject = {
       path: 'useSyncExternalStore',
       element: <UseSyncExternalStore />,
       meta: { key: 'hooks-useSyncExternalStore', label: 'useSyncExternalStore' }
+    },
+    {
+      path: 'useEffect',
+      element: <UseEffect />,
+      meta: { key: 'hooks-useEffect', label: 'useEffect' }
+    },
+    {
+      path: 'useMemo-useRef',
+      element: <UseMemoUseRef />,
+      meta: { key: 'hooks-useMemo-useRef', label: 'useMemo / useRef' }
     }
   ]
 }

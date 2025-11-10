@@ -772,7 +772,7 @@ const ShoppingCartExample = () => {
 // ==================== 主组件：展示所有示例 ====================
 export default function UseStateExamples() {
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className=" max-w-5xl mx-auto ">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">useState 实战示例集合</h1>
         <p className="text-gray-600">
