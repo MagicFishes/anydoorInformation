@@ -1,300 +1,297 @@
-import { type ChangeEvent, type ReactNode, useRef, useState } from "react";
+import { type ChangeEvent, type ReactNode, useRef, useState } from 'react'
 
 type FormDemoState = {
-  username: string;
-  email: string;
-  age: string;
-  subscribe: boolean;
-  gender: string;
-  country: string;
-  colors: string[];
-  skills: string[];
-  interests: string[];
-  contactPref: string;
-  bio: string;
-};
+  username: string
+  email: string
+  age: string
+  subscribe: boolean
+  gender: string
+  country: string
+  colors: string[]
+  skills: string[]
+  interests: string[]
+  contactPref: string
+  bio: string
+}
 
 const formDemoInitialState: FormDemoState = {
-  username: "",
-  email: "",
-  age: "",
+  username: '',
+  email: '',
+  age: '',
   subscribe: false,
-  gender: "female",
-  country: "china",
+  gender: 'female',
+  country: 'china',
   colors: [],
   skills: [],
   interests: [],
-  contactPref: "email",
-  bio: "",
-};
+  contactPref: 'email',
+  bio: '',
+}
 
 type SectionCardProps = {
-  id?: string;
-  title: string;
-  description?: string;
-  children: ReactNode;
-};
+  id?: string
+  title: string
+  description?: string
+  children: ReactNode
+}
 
 function SectionCard({ id, title, description, children }: SectionCardProps) {
   return (
-    <section
-      id={id}
-      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-100"
-    >
+    <section id={id}>
       <header className="space-y-2">
         <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
         {description ? <p className="text-sm text-slate-500">{description}</p> : null}
       </header>
       <div className="mt-6 space-y-6">{children}</div>
     </section>
-  );
+  )
 }
 
 export default function Home() {
-  const checkboxRef = useRef<HTMLInputElement>(null);
-  const [agree, setAgree] = useState(false);
-  const [color, setColor] = useState("red");
-  const [hobbies, setHobbies] = useState<string[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [price, setPrice] = useState<number>(0);
-  const [meetingDate, setMeetingDate] = useState("");
-  const [satisfaction, setSatisfaction] = useState(5);
-  const [city, setCity] = useState("");
-  const [country, setCountry] = useState("china");
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [sizeSelection, setSizeSelection] = useState("2");
-  const [bio, setBio] = useState("");
-  const [feedback, setFeedback] = useState("");
-  const [hardWrap, setHardWrap] = useState("请输入内容，每行会被记录");
-  const [favoriteCity, setFavoriteCity] = useState("shanghai");
-  const [formDemo, setFormDemo] = useState<FormDemoState>(formDemoInitialState);
+  const checkboxRef = useRef<HTMLInputElement>(null)
+  const [agree, setAgree] = useState(false)
+  const [color, setColor] = useState('red')
+  const [hobbies, setHobbies] = useState<string[]>([])
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [price, setPrice] = useState<number>(0)
+  const [meetingDate, setMeetingDate] = useState('')
+  const [satisfaction, setSatisfaction] = useState(5)
+  const [city, setCity] = useState('')
+  const [country, setCountry] = useState('china')
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([])
+  const [sizeSelection, setSizeSelection] = useState('2')
+  const [bio, setBio] = useState('')
+  const [feedback, setFeedback] = useState('')
+  const [hardWrap, setHardWrap] = useState('请输入内容，每行会被记录')
+  const [favoriteCity, setFavoriteCity] = useState('shanghai')
+  const [formDemo, setFormDemo] = useState<FormDemoState>(formDemoInitialState)
 
   const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setAgree(e.target.checked);
-    console.log("checkbox:", e.target.checked);
-    console.dir(e.target);
-  };
+    setAgree(e.target.checked)
+    console.log('checkbox:', e.target.checked)
+    console.dir(e.target)
+  }
 
   const handleRadioChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setColor(e.target.value);
-    console.log("radio:", e.target.value);
-    console.dir(e.target);
-  };
+    setColor(e.target.value)
+    console.log('radio:', e.target.value)
+    console.dir(e.target)
+  }
 
   const handleMultiCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { value, checked } = e.target;
-    console.log("value:", value, "checked:", checked);
-    setHobbies((prev) => {
+    const { value, checked } = e.target
+    console.log('value:', value, 'checked:', checked)
+    setHobbies(prev => {
       if (checked) {
-        return prev.includes(value) ? prev : [...prev, value];
+        return prev.includes(value) ? prev : [...prev, value]
       }
-      return prev.filter((item) => item !== value);
-    });
+      return prev.filter(item => item !== value)
+    })
 
     // console.log("multi checkbox:", value, checked);
-    console.dir(e.target);
-  };
+    console.dir(e.target)
+  }
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    setSelectedFiles(files);
-    console.log("files:", files);
-  };
+    const files = Array.from(e.target.files ?? [])
+    setSelectedFiles(files)
+    console.log('files:', files)
+  }
 
   const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const nextValue = Number.parseFloat(e.target.value);
-    setPrice(Number.isNaN(nextValue) ? 0 : nextValue);
-    console.log("price:", nextValue);
-    console.dir(e.target);
-  };
+    const nextValue = Number.parseFloat(e.target.value)
+    setPrice(Number.isNaN(nextValue) ? 0 : nextValue)
+    console.log('price:', nextValue)
+    console.dir(e.target)
+  }
 
   const handleMeetingDateChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setMeetingDate(e.target.value);
-    console.log("meetingDate:", e.target.value);
-    console.dir(e.target);
-  };
+    setMeetingDate(e.target.value)
+    console.log('meetingDate:', e.target.value)
+    console.dir(e.target)
+  }
 
   const handleRangeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const nextValue = Number.parseInt(e.target.value, 10);
-    setSatisfaction(nextValue);
-    console.log("satisfaction:", nextValue);
-    console.dir(e.target);
-  };
+    const nextValue = Number.parseInt(e.target.value, 10)
+    setSatisfaction(nextValue)
+    console.log('satisfaction:', nextValue)
+    console.dir(e.target)
+  }
 
   const handleCityChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setCity(e.target.value);
-    console.log("city:", e.target.value);
-    console.dir(e.target);
-  };
+    setCity(e.target.value)
+    console.log('city:', e.target.value)
+    console.dir(e.target)
+  }
 
   const handleCountryChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setCountry(e.target.value);
-    console.log("country:", e.target.value);
-    console.dir(e.target);
-  };
+    setCountry(e.target.value)
+    console.log('country:', e.target.value)
+    console.dir(e.target)
+  }
 
   const handleSelectedCountriesChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const values = Array.from(e.target.selectedOptions, (option) => option.value);
-    setSelectedCountries(values);
-    console.log("selected countries:", values);
-    console.dir(e.target);
-  };
+    const values = Array.from(e.target.selectedOptions, option => option.value)
+    setSelectedCountries(values)
+    console.log('selected countries:', values)
+    console.dir(e.target)
+  }
 
   const handleSizeSelectionChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setSizeSelection(e.target.value);
-    console.log("size selection:", e.target.value);
-    console.dir(e.target);
-  };
+    setSizeSelection(e.target.value)
+    console.log('size selection:', e.target.value)
+    console.dir(e.target)
+  }
 
   const handleFavoriteCityChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setFavoriteCity(e.target.value);
-    console.log("favorite city:", e.target.value);
-    console.dir(e.target);
-  };
+    setFavoriteCity(e.target.value)
+    console.log('favorite city:', e.target.value)
+    console.dir(e.target)
+  }
 
   const handleFormDemoChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, type } = e.target;
+    const { name, type } = e.target
 
-    if (type === "checkbox") {
-      const target = e.target as HTMLInputElement;
-      const currentValue = formDemo[name as keyof FormDemoState];
+    if (type === 'checkbox') {
+      const target = e.target as HTMLInputElement
+      const currentValue = formDemo[name as keyof FormDemoState]
 
       if (Array.isArray(currentValue)) {
-        setFormDemo((prev) => {
-          const prevArray = prev[name as keyof FormDemoState] as string[];
+        setFormDemo(prev => {
+          const prevArray = prev[name as keyof FormDemoState] as string[]
           const nextArray = target.checked
             ? prevArray.includes(target.value)
               ? prevArray
               : [...prevArray, target.value]
-            : prevArray.filter((item) => item !== target.value);
+            : prevArray.filter(item => item !== target.value)
 
           return {
             ...prev,
             [name]: nextArray,
-          };
-        });
+          }
+        })
       } else {
-        setFormDemo((prev) => ({
+        setFormDemo(prev => ({
           ...prev,
           [name]: target.checked,
-        }));
+        }))
       }
-    } else if (type === "radio") {
-      const target = e.target as HTMLInputElement;
+    } else if (type === 'radio') {
+      const target = e.target as HTMLInputElement
       if (target.checked) {
-        setFormDemo((prev) => ({
+        setFormDemo(prev => ({
           ...prev,
           [name]: target.value,
-        }));
+        }))
       }
-    } else if (type === "select-multiple") {
-      const target = e.target as HTMLSelectElement;
-      const values = Array.from(target.selectedOptions, (option) => option.value);
-      setFormDemo((prev) => ({
+    } else if (type === 'select-multiple') {
+      const target = e.target as HTMLSelectElement
+      const values = Array.from(target.selectedOptions, option => option.value)
+      setFormDemo(prev => ({
         ...prev,
         [name]: values,
-      }));
+      }))
     } else {
-      setFormDemo((prev) => ({
+      setFormDemo(prev => ({
         ...prev,
         [name]: e.target.value,
-      }));
+      }))
     }
-  };
+  }
 
   const handleFormDemoSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("统一表单提交", formDemo);
-    alert(`统一表单提交：\n${JSON.stringify(formDemo, null, 2)}`);
-  };
+    e.preventDefault()
+    console.log('统一表单提交', formDemo)
+    alert(`统一表单提交：\n${JSON.stringify(formDemo, null, 2)}`)
+  }
 
   const handleFormDemoReset = () => {
-    setFormDemo(() => ({ ...formDemoInitialState }));
-  };
+    setFormDemo(() => ({ ...formDemoInitialState }))
+  }
 
   const handleBioChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setBio(e.target.value);
-    console.log("bio:", e.target.value);
-    console.dir(e.target);
-  };
+    setBio(e.target.value)
+    console.log('bio:', e.target.value)
+    console.dir(e.target)
+  }
 
   const handleFeedbackChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setFeedback(e.target.value);
-    console.log("feedback:", e.target.value);
-    console.dir(e.target);
-  };
+    setFeedback(e.target.value)
+    console.log('feedback:', e.target.value)
+    console.dir(e.target)
+  }
 
   const handleHardWrapChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setHardWrap(e.target.value);
-    console.log("hardWrap:", e.target.value);
-    console.dir(e.target);
-  };
+    setHardWrap(e.target.value)
+    console.log('hardWrap:', e.target.value)
+    console.dir(e.target)
+  }
 
-   const [password,setPassword] = useState("");
-   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
-    console.log("password:", e.target.value);
-    console.dir(e.target);
-  };
-  const [search,setSearch] = useState("");
+  const [password, setPassword] = useState('')
+  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value)
+    console.log('password:', e.target.value)
+    console.dir(e.target)
+  }
+  const [search, setSearch] = useState('')
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    console.log("search:", e.target.value);
-    console.dir(e.target);
-  };
-  const [tel,setTel] = useState("");
+    setSearch(e.target.value)
+    console.log('search:', e.target.value)
+    console.dir(e.target)
+  }
+  const [tel, setTel] = useState('')
   const handleTelChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTel(e.target.value);
-    console.log("tel:", e.target.value);
-    console.dir(e.target);
-  };
-  const [url,setUrl] = useState("");
+    setTel(e.target.value)
+    console.log('tel:', e.target.value)
+    console.dir(e.target)
+  }
+  const [url, setUrl] = useState('')
   const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setUrl(e.target.value);
-    console.log("url:", e.target.value);
-    console.dir(e.target);
-  };
-  const [datetimeLocal,setDatetimeLocal] = useState("");
-  const [hiddenToken] = useState("hidden-value");
-  const [mathA, setMathA] = useState(10);
-  const [mathB, setMathB] = useState(20);
-  const [taskProgress, setTaskProgress] = useState(40);
-  const [systemLoad, setSystemLoad] = useState(60);
+    setUrl(e.target.value)
+    console.log('url:', e.target.value)
+    console.dir(e.target)
+  }
+  const [datetimeLocal, setDatetimeLocal] = useState('')
+  const [hiddenToken] = useState('hidden-value')
+  const [mathA, setMathA] = useState(10)
+  const [mathB, setMathB] = useState(20)
+  const [taskProgress, setTaskProgress] = useState(40)
+  const [systemLoad, setSystemLoad] = useState(60)
   const handleDatetimeLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setDatetimeLocal(e.target.value);
-    console.log("datetimeLocal:", e.target.value);
-    console.dir(e.target);
-  };
+    setDatetimeLocal(e.target.value)
+    console.log('datetimeLocal:', e.target.value)
+    console.dir(e.target)
+  }
   const handleMathAChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const nextValue = Number.parseFloat(e.target.value);
-    const safeValue = Number.isNaN(nextValue) ? 0 : nextValue;
-    setMathA(safeValue);
-    console.log("mathA:", safeValue);
-    console.dir(e.target);
-  };
+    const nextValue = Number.parseFloat(e.target.value)
+    const safeValue = Number.isNaN(nextValue) ? 0 : nextValue
+    setMathA(safeValue)
+    console.log('mathA:', safeValue)
+    console.dir(e.target)
+  }
   const handleMathBChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const nextValue = Number.parseFloat(e.target.value);
-    const safeValue = Number.isNaN(nextValue) ? 0 : nextValue;
-    setMathB(safeValue);
-    console.log("mathB:", safeValue);
-    console.dir(e.target);
-  };
+    const nextValue = Number.parseFloat(e.target.value)
+    const safeValue = Number.isNaN(nextValue) ? 0 : nextValue
+    setMathB(safeValue)
+    console.log('mathB:', safeValue)
+    console.dir(e.target)
+  }
   const handleTaskProgressChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const nextValue = Number.parseInt(e.target.value, 10);
-    const safeValue = Number.isNaN(nextValue) ? 0 : nextValue;
-    setTaskProgress(safeValue);
-    console.log("taskProgress:", safeValue);
-    console.dir(e.target);
-  };
+    const nextValue = Number.parseInt(e.target.value, 10)
+    const safeValue = Number.isNaN(nextValue) ? 0 : nextValue
+    setTaskProgress(safeValue)
+    console.log('taskProgress:', safeValue)
+    console.dir(e.target)
+  }
   const handleSystemLoadChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const nextValue = Number.parseInt(e.target.value, 10);
-    const safeValue = Number.isNaN(nextValue) ? 0 : nextValue;
-    setSystemLoad(safeValue);
-    console.log("systemLoad:", safeValue);
-    console.dir(e.target);
-  };
+    const nextValue = Number.parseInt(e.target.value, 10)
+    const safeValue = Number.isNaN(nextValue) ? 0 : nextValue
+    setSystemLoad(safeValue)
+    console.log('systemLoad:', safeValue)
+    console.dir(e.target)
+  }
   // const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
   //   e.preventDefault();
   //   const form = e.target as HTMLFormElement;
@@ -314,77 +311,69 @@ export default function Home() {
   //   console.dir(form);
   // };
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    const form = e.currentTarget;
+    const form = e.currentTarget
 
     // 旧写法：通过 form.elements.namedItem 获取
     const usernameOld =
-      (form.elements.namedItem("username") as HTMLInputElement | null)?.value ?? "";
+      (form.elements.namedItem('username') as HTMLInputElement | null)?.value ?? ''
     const passwordOld =
-      (form.elements.namedItem("password") as HTMLInputElement | null)?.value ?? "";
-    console.log("username (namedItem):", usernameOld);
-    console.log("password (namedItem):", passwordOld);
+      (form.elements.namedItem('password') as HTMLInputElement | null)?.value ?? ''
+    console.log('username (namedItem):', usernameOld)
+    console.log('password (namedItem):', passwordOld)
 
     // FormData 写法：更加语义化，也能直接上传文件
-    const formData = new FormData(form);
-    const username = formData.get("username")?.toString() ?? "";
-    const password = formData.get("password")?.toString() ?? "";
-    console.log("username (FormData):", username);
-    console.log("password (FormData):", password);
+    const formData = new FormData(form)
+    const username = formData.get('username')?.toString() ?? ''
+    const password = formData.get('password')?.toString() ?? ''
+    console.log('username (FormData):', username)
+    console.log('password (FormData):', password)
 
-    console.dir(form);
-  };
+    console.dir(form)
+  }
 
-  const formARef = useRef<HTMLFormElement>(null);
-  const formBRef = useRef<HTMLFormElement>(null);
+  const formARef = useRef<HTMLFormElement>(null)
+  const formBRef = useRef<HTMLFormElement>(null)
 
   const handleCombinedSubmit = () => {
-    const formAData = formARef.current ? new FormData(formARef.current) : new FormData();
-    const formBData = formBRef.current ? new FormData(formBRef.current) : new FormData();
-
+    const formAData = formARef.current ? new FormData(formARef.current) : new FormData()
+    const formBData = formBRef.current ? new FormData(formBRef.current) : new FormData()
     const payload = {
       profile: Object.fromEntries(formAData.entries()),
       contact: Object.fromEntries(formBData.entries()),
-    };
+    }
 
-    console.log("组合提交 payload:", payload);
-    alert(`组合提交数据：\n${JSON.stringify(payload, null, 2)}`);
-  };
-  const mathSum = mathA + mathB;
-  const meterAccent =
-    systemLoad < 40 ? "#60a5fa" : systemLoad > 80 ? "#f87171" : "#34d399";
+    console.log('组合提交 payload:', payload)
+    alert(`组合提交数据：\n${JSON.stringify(payload, null, 2)}`)
+  }
+  const mathSum = mathA + mathB
+  const meterAccent = systemLoad < 40 ? '#60a5fa' : systemLoad > 80 ? '#f87171' : '#34d399'
   const quickLinks = [
-    { id: "basic-inputs", label: "基础控件" },
-    { id: "upload-numeric", label: "上传与数值" },
-    { id: "date-range", label: "日期与范围" },
-    { id: "textarea", label: "文本域" },
-    { id: "form-submit", label: "表单提交" },
-    { id: "combined-forms", label: "组合表单" },
-    { id: "fieldset", label: "Fieldset" },
-    { id: "assist-display", label: "辅助展示" },
-    { id: "select-variations", label: "Select 进阶" },
-    { id: "controlled-form", label: "统一受控" },
-  ];
+    { id: 'basic-inputs', label: '基础控件' },
+    { id: 'upload-numeric', label: '上传与数值' },
+    { id: 'date-range', label: '日期与范围' },
+    { id: 'textarea', label: '文本域' },
+    { id: 'form-submit', label: '表单提交' },
+    { id: 'combined-forms', label: '组合表单' },
+    { id: 'fieldset', label: 'Fieldset' },
+    { id: 'assist-display', label: '辅助展示' },
+    { id: 'select-variations', label: 'Select 进阶' },
+    { id: 'controlled-form', label: '统一受控' },
+  ]
   const textInputClass =
-    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200";
-  const selectClass = `${textInputClass} cursor-pointer`;
-  const controlLabelClass = "block space-y-1 text-sm text-slate-600";
-  const checkboxClass = "h-4 w-4 rounded border-slate-300 text-sky-500 focus:ring-sky-300";
-  const radioClass = "h-4 w-4 border-slate-300 text-sky-500 focus:ring-sky-300";
+    'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200'
+  const selectClass = `${textInputClass} cursor-pointer`
+  const controlLabelClass = 'block space-y-1 text-sm text-slate-600'
+  const checkboxClass = 'h-4 w-4 rounded border-slate-300 text-sky-500 focus:ring-sky-300'
+  const radioClass = 'h-4 w-4 border-slate-300 text-sky-500 focus:ring-sky-300'
   const textareaClass =
-    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200";
-  const subtlePanelClass =
-    "rounded-xl border border-slate-200 bg-slate-50/80 p-4 shadow-inner";
+    'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200'
+  const subtlePanelClass = 'rounded-xl border border-slate-200 bg-slate-50/80 p-4 shadow-inner'
   return (
     <div className="p-[2rem]">
       <label>
-        <input
-          ref={checkboxRef}
-          type="checkbox"
-          checked={agree}
-          onChange={handleCheckboxChange}
-        />
+        <input ref={checkboxRef} type="checkbox" checked={agree} onChange={handleCheckboxChange} />
         同意协议
       </label>
 
@@ -414,12 +403,7 @@ export default function Home() {
       <div>
         <label className="block space-y-1">
           <span>国家（只能选择预设选项）</span>
-          <select
-            name="country"
-            value={country}
-            onChange={handleCountryChange}
-            required
-          >
+          <select name="country" value={country} onChange={handleCountryChange} required>
             <option value="china">中国</option>
             <option value="usa">美国</option>
             <option value="japan">日本</option>
@@ -436,7 +420,7 @@ export default function Home() {
             type="checkbox"
             name="hobby"
             value="reading"
-            checked={hobbies.includes("reading")}
+            checked={hobbies.includes('reading')}
             onChange={handleMultiCheckboxChange}
           />
           阅读
@@ -446,7 +430,7 @@ export default function Home() {
             type="checkbox"
             name="hobby"
             value="music"
-            checked={hobbies.includes("music")}
+            checked={hobbies.includes('music')}
             onChange={handleMultiCheckboxChange}
           />
           音乐
@@ -456,7 +440,7 @@ export default function Home() {
             type="checkbox"
             name="hobby"
             value="sports"
-            checked={hobbies.includes("sports")}
+            checked={hobbies.includes('sports')}
             onChange={handleMultiCheckboxChange}
           />
           运动
@@ -465,12 +449,12 @@ export default function Home() {
 
       <div className="mt-4 space-y-2">
         <p>
-          当前状态：checkbox = {agree ? "已选中" : "未选中"}，radio = {color}，多选 ={" "}
-          {hobbies.join(", ") || "无"}
+          当前状态：checkbox = {agree ? '已选中' : '未选中'}，radio = {color}，多选 ={' '}
+          {hobbies.join(', ') || '无'}
         </p>
         {selectedFiles.length > 0 && (
           <ul className="list-disc pl-5">
-            {selectedFiles.map((file) => (
+            {selectedFiles.map(file => (
               <li key={file.name}>
                 {file.name}（{(file.size / 1024).toFixed(1)} KB）
               </li>
@@ -546,7 +530,7 @@ export default function Home() {
             onChange={handleMeetingDateChange}
           />
         </label>
-        <p>会议日期：{meetingDate || "尚未选择"}</p>
+        <p>会议日期：{meetingDate || '尚未选择'}</p>
       </div>
       {/* range slider */}
       <div>
@@ -666,8 +650,8 @@ export default function Home() {
           表单外部提交（form* 属性示例）
         </button>
         <p className="text-sm text-gray-500">
-          form 指向目标表单，其余 form* 属性可以覆盖 action、method、target 等设置。
-          在 React SPA 中通常仍会在 onSubmit 里阻止默认提交，这里仅作演示。
+          form 指向目标表单，其余 form* 属性可以覆盖 action、method、target 等设置。 在 React SPA
+          中通常仍会在 onSubmit 里阻止默认提交，这里仅作演示。
         </p>
       </div>
 
@@ -733,16 +717,14 @@ export default function Home() {
               <span>地址</span>
               <input type="text" name="fieldset-address" defaultValue="示例地址" />
             </label>
-            <p className="text-sm text-gray-500">
-              整个 fieldset 被 disabled，内部控件都不可编辑。
-            </p>
+            <p className="text-sm text-gray-500">整个 fieldset 被 disabled，内部控件都不可编辑。</p>
           </fieldset>
         </form>
       </div>
       {/* 辅助与显示组件 */}
       <div className="mt-10 space-y-6">
         <p>辅助与显示组件示例：</p>
-        <form className="space-y-4 rounded border p-4" onSubmit={(e) => e.preventDefault()}>
+        <form className="space-y-4 rounded border p-4" onSubmit={e => e.preventDefault()}>
           <h3 className="font-semibold">output：展示计算结果</h3>
           <label className="block space-y-1" htmlFor="math-a">
             <span>数值 A</span>
@@ -845,7 +827,7 @@ export default function Home() {
               <option value="france">法国</option>
             </select>
           </label>
-          <p>已选择：{selectedCountries.join(", ") || "无"}</p>
+          <p>已选择：{selectedCountries.join(', ') || '无'}</p>
         </div>
 
         <div>
@@ -959,7 +941,7 @@ export default function Home() {
                 type="radio"
                 name="gender"
                 value="female"
-                checked={formDemo.gender === "female"}
+                checked={formDemo.gender === 'female'}
                 onChange={handleFormDemoChange}
               />
               女
@@ -969,7 +951,7 @@ export default function Home() {
                 type="radio"
                 name="gender"
                 value="male"
-                checked={formDemo.gender === "male"}
+                checked={formDemo.gender === 'male'}
                 onChange={handleFormDemoChange}
               />
               男
@@ -979,7 +961,7 @@ export default function Home() {
                 type="radio"
                 name="gender"
                 value="other"
-                checked={formDemo.gender === "other"}
+                checked={formDemo.gender === 'other'}
                 onChange={handleFormDemoChange}
               />
               其他
@@ -1035,7 +1017,7 @@ export default function Home() {
                 type="checkbox"
                 name="interests"
                 value="coding"
-                checked={formDemo.interests.includes("coding")}
+                checked={formDemo.interests.includes('coding')}
                 onChange={handleFormDemoChange}
               />
               编程
@@ -1045,7 +1027,7 @@ export default function Home() {
                 type="checkbox"
                 name="interests"
                 value="music"
-                checked={formDemo.interests.includes("music")}
+                checked={formDemo.interests.includes('music')}
                 onChange={handleFormDemoChange}
               />
               音乐
@@ -1055,7 +1037,7 @@ export default function Home() {
                 type="checkbox"
                 name="interests"
                 value="travel"
-                checked={formDemo.interests.includes("travel")}
+                checked={formDemo.interests.includes('travel')}
                 onChange={handleFormDemoChange}
               />
               旅行
@@ -1069,7 +1051,7 @@ export default function Home() {
                 type="radio"
                 name="contactPref"
                 value="email"
-                checked={formDemo.contactPref === "email"}
+                checked={formDemo.contactPref === 'email'}
                 onChange={handleFormDemoChange}
               />
               邮件
@@ -1079,7 +1061,7 @@ export default function Home() {
                 type="radio"
                 name="contactPref"
                 value="phone"
-                checked={formDemo.contactPref === "phone"}
+                checked={formDemo.contactPref === 'phone'}
                 onChange={handleFormDemoChange}
               />
               电话
@@ -1089,7 +1071,7 @@ export default function Home() {
                 type="radio"
                 name="contactPref"
                 value="message"
-                checked={formDemo.contactPref === "message"}
+                checked={formDemo.contactPref === 'message'}
                 onChange={handleFormDemoChange}
               />
               短信
@@ -1123,5 +1105,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
+  )
 }
