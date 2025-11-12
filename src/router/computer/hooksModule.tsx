@@ -12,6 +12,7 @@ const UseReducer = lazy(() => import('@/pages/home/useReducer'))
 const UseSyncExternalStore = lazy(() => import('@/pages/home/useSyncExternalStore'))
 const UseEffect = lazy(() => import('@/pages/home/useEffect'))
 const UseMemoUseRef = lazy(() => import('@/pages/home/useMemoUseRef'))
+const UseActionStateShowcase = lazy(() => import('@/pages/home/useActionStateShowcase'))
 
 // Hooks 学习模块路由配置
 export const hooksModule: RouteObject = {
@@ -40,6 +41,11 @@ export const hooksModule: RouteObject = {
       path: 'useActionState',
       element: <UseActionState />,
       meta: { key: 'hooks-useActionState', label: 'useActionState' }
+    },
+    {
+      path: 'useActionState-demo',
+      element: <UseActionStateShowcase />,
+      meta: { key: 'hooks-useActionState-demo', label: 'useActionState 示例' }
     },
     {
       path: 'useContext',
