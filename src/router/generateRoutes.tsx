@@ -1,7 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { lazy } from 'react'
 import { RouteObject } from './types'
-import AdminLayout from '@/layouts/AdminLayout'
 import BasicLayout from '@/layouts/BasicLayout'
 import MobileLayout from '@/layouts/MobileLayout'
 import { computerModules } from './computer'
@@ -35,9 +34,9 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
         path: '/login',
         element: <Login />
       },
-      // 🔥 路由守卫：捕获 PC 端路径并重定向到移动端首页
+      // 🔥 路由守卫：捕获 PC 端路径并重定向到移动端首页（排除 /login 等公共路径）
       {
-        path: '/admin/*',
+        path: '/home/*',
         element: <Navigate to="/mobile" replace />
       },
       {
@@ -53,16 +52,18 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
   } else {
     // PC端路由配置
     return [
-      // 根路径重定向到后台首页
+      // 网站端路由（无侧边栏）
       {
         path: '/',
-        element: <Navigate to="/admin/home/page" replace />
-      },
-      // 后台管理路由（带侧边栏）
-      {
-        path: '/admin',
-        element: <AdminLayout />,
-        children: computerModules
+        element: <BasicLayout />,
+        children: [
+          // 根路径重定向到首页
+          {
+            index: true,
+            element: <Navigate to="/home/page" replace />
+          },
+          ...computerModules
+        ]
       },
       // 普通页面路由（无侧边栏）
       {
@@ -87,7 +88,7 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
       // 🔥 路由守卫：捕获移动端路径并重定向到 PC 端首页
       {
         path: '/mobile/*',
-        element: <Navigate to="/admin/home/page" replace />
+        element: <Navigate to="/home/page" replace />
       },
       // 404
       {
