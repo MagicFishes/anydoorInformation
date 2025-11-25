@@ -18,9 +18,9 @@ const MobileLayout: React.FC = () => {
   return (
     <div className="mobile-layout min-h-screen flex flex-col">
       {/* 移动端头部 */}
-      <header className="bg-white shadow-sm px-4 py-3 flex items-center">
+      {/* <header className="bg-white shadow-sm px-4 py-3 flex items-center">
         <div className="text-lg font-bold">Mobile Header</div>
-      </header>
+      </header> */}
       
       {/* 主内容区 */}
       <main className="flex-1 overflow-auto">
@@ -30,7 +30,7 @@ const MobileLayout: React.FC = () => {
       </main>
       
       {/* 移动端底部导航 */}
-      <footer className="bg-white border-t border-gray-200 px-4 py-2">
+      {/* <footer className="bg-white border-t border-gray-200 px-4 py-2">
         <div className="flex justify-around items-center">
           <div className="text-center">
             <div className="text-2xl">🏠</div>
@@ -45,7 +45,7 @@ const MobileLayout: React.FC = () => {
             <div className="text-xs">我的</div>
           </div>
         </div>
-      </footer>
+      </footer> */}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import MobileLayout from '@/layouts/MobileLayout'
 import { computerModules } from './computer'
 import { mobileModules } from './mobile/index'
 import NotFound from '@/pages/NotFound/NotFound'
+import RedirectWithParams from './RedirectWithParams'
 
 // 独立页面
 const Login = lazy(() => import('@/pages/Login/Login'))
@@ -34,14 +35,18 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
         path: '/login',
         element: <Login />
       },
-      // 🔥 路由守卫：捕获 PC 端路径并重定向到移动端首页（排除 /login 等公共路径）
+      // 🔥 路由守卫：捕获 PC 端路径并重定向到移动端首页，保留URL参数
+      {
+        path: '/homeManager/*',
+        element: <RedirectWithParams to="/mobile" />
+      },
       {
         path: '/home/*',
-        element: <Navigate to="/mobile" replace />
+        element: <RedirectWithParams to="/mobile" />
       },
       {
         path: '/pages/*',
-        element: <Navigate to="/mobile" replace />
+        element: <RedirectWithParams to="/mobile" />
       },
       // 404
       {
@@ -60,7 +65,7 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
           // 根路径重定向到首页
           {
             index: true,
-            element: <Navigate to="/home/page" replace />
+            element: <Navigate to="/homeManager/home" replace />
           },
           ...computerModules
         ]
@@ -88,7 +93,7 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
       // 🔥 路由守卫：捕获移动端路径并重定向到 PC 端首页
       {
         path: '/mobile/*',
-        element: <Navigate to="/home/page" replace />
+        element: <Navigate to="/homeManager/home" replace />
       },
       // 404
       {

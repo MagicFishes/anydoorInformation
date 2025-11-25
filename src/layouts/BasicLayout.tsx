@@ -16,14 +16,14 @@ const LoadingFallback = () => (
 
 const BasicLayout: React.FC = () => {
   return (
-    <div className="w-full min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen text-[16rem]  bg-[white]">
       {/* 可选：顶部导航栏 */}
       {/* <header className="bg-white shadow-sm h-16 flex items-center px-6">
         <div className="text-xl font-bold text-gray-800">网站 Logo</div>
       </header> */}
       
       {/* 主内容区 */}
-      <main className="w-full">
+      <main className="w-full h-[100%] px-[15%]">
         <Suspense fallback={<LoadingFallback />}>
           <Outlet />
         </Suspense>

@@ -10,7 +10,15 @@ import { generateRoutes } from './router/generateRoutes'
 export default function App() {
   const dispatch = useDispatch()
   const isMobile = useSelector((state: RootState) => state.app.isMobile)
+  const theme = useSelector((state: RootState) => state.app.theme) || 'dark'
   const prevIsMobileRef = useRef(isMobile)
+
+  // 初始化主题：从 Redux store 读取并应用到 document
+  useEffect(() => {
+    const root = window.document.documentElement
+    root.classList.remove('light', 'dark')
+    root.classList.add(theme)
+  }, [theme])
 
   // 响应式判断：监听窗口大小变化
   useEffect(() => {
