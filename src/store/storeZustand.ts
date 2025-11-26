@@ -1,37 +1,61 @@
-// Zustand Store - 轻量级状态管理
+// Zustand Store - 轻量级状态管理（替代 Redux）
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-interface StoreState {
-  bears: number
-  sound: string
-  fishies: any
-  increasePopulation: () => void
-  removeAllBears: () => void
-  fetch: (pond: any) => Promise<void>
+interface AppState {
+  // 状态
+  isMobile: boolean
+  theme: 'light' | 'dark'
+  language: 'en' | 'zh'
+  
+  // 方法（Actions）
+  setIsMobile: (isMobile: boolean) => void
+  setTheme: (theme: 'light' | 'dark') => void
+  setLanguage: (language: 'en' | 'zh') => void
+  toggleTheme: () => void
+  toggleLanguage: () => void
 }
 
-const useStore = create<StoreState>()(
+// 🎯 Zustand Store - 超级简洁！
+export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
-      bears: 0,
-      sound: '',
-      fishies: {},
-      increasePopulation: () => set((state) => ({ ...state, bears: state.bears + 1 })),
-      removeAllBears: () => set({ bears: 0 }),
-      fetch: async (pond: any) => {
-        const sound = get().sound
-        const response = await fetch(pond)
-        const data = await response.json()
-        set({ fishies: data })
-      },
+    (set) => ({
+      // 初始状态
+      // ⚠️ 注意：persist 中间件会优先从 localStorage 读取持久化的数据
+      // 只有在 localStorage 中没有数据时，才会使用这里的初始值
+      // 
+      // theme 和 language：会被持久化，如果 localStorage 中有值，会使用持久化的值
+      // isMobile：不会被持久化（见 partialize），每次页面加载时在组件中重新计算
+      isMobile: false, // 占位值，App.tsx 中会在组件挂载时立即设置正确值
+      theme: 'dark' as const, // 默认值，会被 localStorage 中的值覆盖（如果存在）
+      language: 'zh' as const, // 默认值，会被 localStorage 中的值覆盖（如果存在）
+      
+      // Actions（方法）- 直接在 store 中定义，无需额外文件
+      setIsMobile: (isMobile) => set({ isMobile }),
+      setTheme: (theme) => set({ theme }),
+      setLanguage: (language) => set({ language }),
+      toggleTheme: () => set((state) => ({ 
+        theme: state.theme === 'light' ? 'dark' : 'light' 
+      })),
+      toggleLanguage: () => set((state) => ({ 
+        language: state.language === 'en' ? 'zh' : 'en' 
+      })),
     }),
     {
-      name: 'my-store', // 存储在 localStorage 中的 key
-      storage: createJSONStorage(() => localStorage), // 使用 localStorage
+      name: 'app-store', // localStorage key
+      storage: createJSONStorage(() => localStorage),
+      // 🔥 关键：只持久化 theme 和 language，不持久化 isMobile（因为它是响应式的）
+      partialize: (state) => ({
+        theme: state.theme,
+        language: state.language,
+        // isMobile 不持久化，每次根据窗口大小动态计算
+      }),
     },
   ),
 )
 
-export default useStore
-
+// 可选：导出便捷的 selector hooks（更简洁的使用方式）
+export const useAppState = () => useAppStore()
+export const useIsMobile = () => useAppStore(state => state.isMobile)
+export const useTheme = () => useAppStore(state => state.theme)
+export const useLanguage = () => useAppStore(state => state.language)

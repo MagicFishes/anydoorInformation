@@ -18,7 +18,8 @@
       "@/*": ["src/*"],
       "@components/*": ["src/components/*"]
     },
-    "jsx": "react-jsx"  // 使用的 JSX 选项
+    "jsx": "react-jsx",  // 使用的 JSX 选项
+    "resolveJsonModule": true  // 允许导入 JSON 模块
     // // 解决prettier对于装饰器语法的警告
     // "experimentalDecorators": true,
     // // 解决.jsx文件无法快速跳转的问题

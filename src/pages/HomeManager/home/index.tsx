@@ -1,61 +1,64 @@
 import Footer from '@/components/footer/footer'
 import Header from '@/components/header/header'
 import { Input, Select, Button, message } from 'antd'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useTranslation } from 'react-i18next'
 
-// 使用 Zod 定义表单验证规则
-const paymentFormSchema = z.object({
-  cardNumber: z
-    .string()
-    .min(1, '请输入卡号')
-    .refine(
-      value => {
-        const digits = value.replace(/\s/g, '').replace(/\D/g, '')
-        return digits.length >= 13 && digits.length <= 19
-      },
-      { message: '请输入13-19位数字的卡号' }
-    )
-    .refine(
-      value => {
-        const digits = value.replace(/\s/g, '').replace(/\D/g, '')
-        // Luhn算法验证卡号
-        let sum = 0
-        let isEven = false
-        for (let i = digits.length - 1; i >= 0; i--) {
-          let digit = parseInt(digits[i])
-          if (isEven) {
-            digit *= 2
-            if (digit > 9) digit -= 9
+// 创建表单验证规则的函数（支持翻译）
+const createPaymentFormSchema = (t: (key: string) => string) => {
+  return z.object({
+    cardNumber: z
+      .string()
+      .min(1, t('请输入卡号'))
+      .refine(
+        value => {
+          const digits = value.replace(/\s/g, '').replace(/\D/g, '')
+          return digits.length >= 13 && digits.length <= 19
+        },
+        { message: t('请输入13-19位数字的卡号') }
+      )
+      .refine(
+        value => {
+          const digits = value.replace(/\s/g, '').replace(/\D/g, '')
+          // Luhn算法验证卡号
+          let sum = 0
+          let isEven = false
+          for (let i = digits.length - 1; i >= 0; i--) {
+            let digit = parseInt(digits[i])
+            if (isEven) {
+              digit *= 2
+              if (digit > 9) digit -= 9
+            }
+            sum += digit
+            isEven = !isEven
           }
-          sum += digit
-          isEven = !isEven
-        }
-        return sum % 10 === 0
-      },
-      { message: '卡号格式不正确' }
-    ),
-  cardType: z.string().min(1, '请选择卡种'),
-  expiryDate: z
-    .string()
-    .min(1, '请输入有效期')
-    .regex(/^(0[1-9]|1[0-2])\/\d{2}$/, '格式：MM/YY（如：12/25）')
-    .refine(
-      value => {
-        const [month, year] = value.split('/')
-        const expiry = new Date(2000 + parseInt(year), parseInt(month) - 1)
-        const now = new Date()
-        return expiry >= now
-      },
-      { message: '有效期不能是过去的日期' }
-    ),
-  cvv: z
-    .string()
-    .min(1, '请输入安全码')
-    .regex(/^\d{3,4}$/, '请输入3-4位数字'),
-})
+          return sum % 10 === 0
+        },
+        { message: t('卡号格式不正确') }
+      ),
+    cardType: z.string().min(1, t('请选择卡种')),
+    expiryDate: z
+      .string()
+      .min(1, t('请输入有效期'))
+      .regex(/^(0[1-9]|1[0-2])\/\d{2}$/, t('格式：MM/YY（如：12/25）'))
+      .refine(
+        value => {
+          const [month, year] = value.split('/')
+          const expiry = new Date(2000 + parseInt(year), parseInt(month) - 1)
+          const now = new Date()
+          return expiry >= now
+        },
+        { message: t('有效期不能是过去的日期') }
+      ),
+    cvv: z
+      .string()
+      .min(1, t('请输入安全码'))
+      .regex(/^\d{3,4}$/, t('请输入3-4位数字')),
+  })
+}
 const payIconList = {
   Visa: '/image/home/payIcon/Visa.png',
   Mastercard: '/image/home/payIcon/Mastercard.png',
@@ -64,9 +67,16 @@ const payIconList = {
   Dinersclub: '/image/home/payIcon/DinersClub.png',
   JCB: '/image/home/payIcon/JCB.png',
 }
-// 从 Schema 推断类型
-type PaymentFormData = z.infer<typeof paymentFormSchema>
 export default function Home() {
+  // 使用翻译
+  const { t } = useTranslation()
+  
+  // 动态创建 Schema（支持翻译）
+  const paymentFormSchema = useMemo(() => createPaymentFormSchema(t), [t])
+  
+  // 从 Schema 推断类型
+  type PaymentFormData = z.infer<typeof paymentFormSchema>
+  
   // 时间已过期
   const [timeExpired, setTimeExpired] = useState(false)
   // 使用 React Hook Form + Zod
@@ -99,10 +109,10 @@ export default function Home() {
       // 这里可以调用支付接口
       // const response = await paymentApi.submitPayment(values)
 
-      message.success('支付信息提交成功！')
+      message.success(t('支付信息提交成功！'))
     } catch (error) {
       console.error('支付提交失败:', error)
-      message.error('支付提交失败，请重试')
+      message.error(t('支付提交失败，请重试'))
     } finally {
       setIsSubmitting(false)
     }
@@ -112,48 +122,54 @@ export default function Home() {
   const [paymentData, setPaymentData] = useState<PaymentFormData | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const showImageList = [
-    {
-      image: '/image/home/Frame1.png',
-      title: '银行级风控',
-      description: '我们的基础设施使用银行级别的加密技术，随时保护您的财务数据。',
-      bgColor: '#dfffdf',
-    },
-    {
-      image: '/image/home/Frame2.png',
-      title: 'PCI认证合规',
-      description: '完全符合支付卡行业数据安全标准（Pcl DsS） 1级。',
-      bgColor: '#E2EEFF',
-    },
-    {
-      image: '/image/home/Frame3.png',
-      title: '验证商户',
-      description: '通过国际卡计划和当地当局的官方认证，以确保安全旅行。',
-      bgColor: '#F3E8FF',
-    },
-  ]
+  const showImageList = useMemo(
+    () => [
+      {
+        image: '/image/home/Frame1.png',
+        title: t('银行级风控'),
+        description: t('我们的基础设施使用银行级别的加密技术，随时保护您的财务数据。'),
+        bgColor: '#dfffdf',
+      },
+      {
+        image: '/image/home/Frame2.png',
+        title: t('PCI认证合规'),
+        description: t('完全符合支付卡行业数据安全标准（Pcl DsS） 1级。'),
+        bgColor: '#E2EEFF',
+      },
+      {
+        image: '/image/home/Frame3.png',
+        title: t('验证商户'),
+        description: t('通过国际卡计划和当地当局的官方认证，以确保安全旅行。'),
+        bgColor: '#F3E8FF',
+      },
+    ],
+    [t]
+  )
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>('creditCard')
   // 支付选项
-  const paymentOptions = [
-    {
-      image: '/image/home/icon/card.png',
-      title: '信用卡',
-      type: 'creditCard',
-      selectedImage: '/image/home/icon/cardActive.png',
-    },
-    {
-      image: '/image/home/icon/wechat.png',
-      title: '微信支付',
-      type: 'wechatPay',
-      selectedImage: '/image/home/icon/wechatActive.png',
-    },
-    {
-      image: '/image/home/icon/alipay.png',
-      title: '支付宝',
-      type: 'alipay',
-      selectedImage: '/image/home/icon/alipayActive.png',
-    },
-  ]
+  const paymentOptions = useMemo(
+    () => [
+      {
+        image: '/image/home/icon/card.png',
+        title: t('信用卡'),
+        type: 'creditCard',
+        selectedImage: '/image/home/icon/cardActive.png',
+      },
+      {
+        image: '/image/home/icon/wechat.png',
+        title: t('微信支付'),
+        type: 'wechatPay',
+        selectedImage: '/image/home/icon/wechatActive.png',
+      },
+      {
+        image: '/image/home/icon/alipay.png',
+        title: t('支付宝'),
+        type: 'alipay',
+        selectedImage: '/image/home/icon/alipayActive.png',
+      },
+    ],
+    [t]
+  )
   // 表单
 
   return (
@@ -169,7 +185,7 @@ export default function Home() {
               {/* 酒店信息 */}
               <div className="text-[14rem] flex-col flex  mb-[20rem] border-b-[1rem] border-solid border-gray-300 pb-[20rem]">
                 <div className="text-[18rem] mb-[5rem] tracking-[2rem] font-bold ">
-                  上海宝格丽酒店
+                  {t('上海宝格丽酒店')}
                 </div>
                 <div className="text-[14rem] text-gray-400 ">Bulgari Hotel Shanghai</div>
               </div>
@@ -179,15 +195,15 @@ export default function Home() {
                        入住信息
                      </div> */}
                 <div className="text-[14rem]  flex-col flex mb-[15rem] ">
-                  <div className=" text-gray-400 mb-[5rem] tracking-[1rem]">客人</div>
+                  <div className=" text-gray-400 mb-[5rem] tracking-[1rem]">{t('客人')}</div>
                   <div className="text-[18rem] font-bold tracking-[1rem]">Hua Zhong</div>
                 </div>
                 <div className="text-[14rem]  flex-col flex mb-[15rem] ">
-                  <div className="text-gray-400 mb-[5rem] tracking-[1rem]">入住日期</div>
+                  <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('入住日期')}</div>
                   <div className="text-[18rem] font-bold tracking-[1rem]">2025/03/31</div>
                 </div>
                 <div className="text-[14rem]  flex-col flex  mb-[15rem]">
-                  <div className=" text-gray-400 mb-[5rem] tracking-[1rem]">离店日期</div>
+                  <div className=" text-gray-400 mb-[5rem] tracking-[1rem]">{t('离店日期')}</div>
                   <div className="text-[18rem] font-bold tracking-[1rem]">2025/04/01</div>
                 </div>
               </div>
@@ -198,17 +214,17 @@ export default function Home() {
             <div className="w-full  bg-[#dfffdf]  py-[10rem]  flex justify-center items-center mb-[20rem">
               <img src="/image/home/Frame4.png" alt="" className="w-[20rem] h-[20rem] mr-[10rem]" />
               <div className="text-[16rem] font-bold tracking-[1rem] text-center text-[#1aad19]">
-                安全担保支付
+                {t('安全担保支付')}
               </div>
             </div>
             <div className="px-[25rem]">
               {/* 文本 */}
               <div className="w-full  flex-col flex py-[20rem]">
                 <div className="text-[16rem] font-bold tracking-[2rem] text-center text-[#1677FF]">
-                  完成您的预订支付
+                  {t('完成您的预订支付')}
                 </div>
                 <div className="text-[13rem] tracking-[1rem] text-center ">
-                  体验最可靠的酒店直连支付网关，官方认证，安全无忧
+                  {t('体验最可靠的酒店直连支付网关，官方认证，安全无忧')}
                 </div>
               </div>
               {/* 支付选项 */}
@@ -245,7 +261,7 @@ export default function Home() {
                         {/* 第一项：卡号 */}
                         <div className="flex flex-col">
                           <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                            卡号
+                            {t('卡号')}
                           </label>
                           <Controller
                             name="cardNumber"
@@ -253,7 +269,7 @@ export default function Home() {
                             render={({ field }) => (
                               <Input
                                 {...field}
-                                placeholder="请输入卡号"
+                                placeholder={t('请输入卡号')}
                                 maxLength={23}
                                 className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
                                 status={errors.cardNumber ? 'error' : ''}
@@ -282,7 +298,7 @@ export default function Home() {
                         {/* 第二项：卡种 */}
                         <div className="flex flex-col">
                           <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                            卡种
+                            {t('卡种')}
                           </label>
                           <Controller
                             name="cardType"
@@ -291,7 +307,7 @@ export default function Home() {
                               <Select
                                 {...field}
                                 value={field.value || undefined}
-                                placeholder="请选择卡种"
+                                placeholder={t('请选择卡种')}
                                 className="text-[14rem] [&_.ant-select-selector]:!bg-[#f6f6f6]"
                                 style={{ height: '40rem' }}
                                 status={errors.cardType ? 'error' : ''}
@@ -299,7 +315,7 @@ export default function Home() {
                                   { value: 'visa', label: 'Visa' },
                                   { value: 'mastercard', label: 'MasterCard' },
                                   { value: 'amex', label: 'American Express' },
-                                  { value: 'unionpay', label: '银联' },
+                                  { value: 'unionpay', label: t('银联') },
                                 ]}
                               />
                             )}
@@ -314,7 +330,7 @@ export default function Home() {
                         {/* 第三项：有效期 */}
                         <div className="flex flex-col">
                           <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                            有效期
+                            {t('有效期')}
                           </label>
                           <Controller
                             name="expiryDate"
@@ -356,7 +372,7 @@ export default function Home() {
                         {/* 第四项：安全码 */}
                         <div className="flex flex-col">
                           <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                            安全码
+                            {t('安全码')}
                           </label>
                           <Input
                             {...register('cvv')}
@@ -395,19 +411,19 @@ export default function Home() {
                         <img className="h-[30rem] mr-[10rem]" src="/image/scanCode.png" alt="" />
                         {selectedPaymentOption === 'wechatPay' && (
                           <div>
-                            打开 <span className="text-[#1aad19] font-bold">微信</span> 的{' '}
-                            <span className="text-[#1aad19] font-bold">扫一扫</span>
+                            {t('打开')} <span className="text-[#1aad19] font-bold">{t('微信')}</span> {t('的')}{' '}
+                            <span className="text-[#1aad19] font-bold">{t('扫一扫')}</span>
                           </div>
                         )}
                         {selectedPaymentOption === 'alipay' && (
                           <div>
-                            打开 <span className="text-[#0d99ff] font-bold">支付宝</span> 的{' '}
-                            <span className="text-[#0d99ff] font-bold">扫一扫</span>
+                            {t('打开')} <span className="text-[#0d99ff] font-bold">{t('支付宝')}</span> {t('的')}{' '}
+                            <span className="text-[#0d99ff] font-bold">{t('扫一扫')}</span>
                           </div>
                         )}
                       </div>
                       <div className="text-[14rem] tracking-[1rem] text-gray-400">
-                        扫描上方二维码进行支付
+                        {t('扫描上方二维码进行支付')}
                       </div>
                     </div>
                   )}
@@ -416,35 +432,35 @@ export default function Home() {
               {/* 时间已过期 */}
               {timeExpired && (
                 <div className="  flex flex-col mt-[20rem] ">
-                  <div className='text-[16rem] font-bold tracking-[1rem]  font-bold'>直付链接已过期</div>
-                  <div className='text-[14rem] mt-[10rem] tracking-[1rem] text-gray-400'>出于安全原因，直付链接已过期。您可以在下面请求新链接。您将收到一封包含新直付链接的电子邮件。</div>
+                  <div className='text-[16rem] font-bold tracking-[1rem]  font-bold'>{t('直付链接已过期')}</div>
+                  <div className='text-[14rem] mt-[10rem] tracking-[1rem] text-gray-400'>{t('出于安全原因，直付链接已过期。您可以在下面请求新链接。您将收到一封包含新直付链接的电子邮件。')}</div>
                 </div>
               )}
               {/* 担保说明||全额手续费说明 */}
               <div className=" flex flex-col mt-[20rem]">
                 <div className="text-[20rem] font-bold tracking-[1rem] ">
-                  {selectedPaymentOption === 'creditCard' ? '担保说明' : '全额手续费说明'}
+                  {selectedPaymentOption === 'creditCard' ? t('担保说明') : t('全额手续费说明')}
                 </div>
                 <div className="text-[14rem] tracking-[1rem] text-gray-400 my-[10rem]">
                   {selectedPaymentOption === 'creditCard'
-                    ? '信用卡登记仅作担保之用，实际付款需到现场办理。为了验证您的信用卡，您的对账单上可能会有1美元的临时授权。这笔款项将立即被删除。你不会被收取任何费用。'
-                    : '鉴于全球电子支付系统的跨域支付，如果您使用微信（支付宝），将会收取（10%）的手续费，请知悉！'}
+                    ? t('信用卡登记仅作担保之用，实际付款需到现场办理。为了验证您的信用卡，您的对账单上可能会有1美元的临时授权。这笔款项将立即被删除。你不会被收取任何费用。')
+                    : t('鉴于全球电子支付系统的跨域支付，如果您使用微信（支付宝），将会收取（10%）的手续费，请知悉！')}
                 </div>
               </div>
               {/* 支付说明+支付 */}
               <div className=" flex  justify-between mt-[20rem] ">
                 {/* 左侧说明 */}
-                <div className="w-[50%] flex flex-col">
+                <div className=" flex-1 flex flex-col">
                   <div className="flex justify-start text-[#1aad19] font-bold tracking-[1rem] text-[14rem]  items-center">
                     <img
                       className="w-[20rem] h-[20rem]"
                       src="/image/home/icon/payIcon.png"
                       alt=""
                     />
-                    <div className="ml-[10rem]">您的支付信息收到加密保护</div>
+                    <div className="ml-[10rem]">{t('您的支付信息收到加密保护')}</div>
                   </div>
                   <div className=" mt-[10rem] flex flex-col">
-                    <div className="text-[14rem] tracking-[1rem] text-gray-400">支持的支付方式</div>
+                    <div className="text-[14rem] tracking-[1rem] text-gray-400">{t('支持的支付方式')}</div>
                     <div className="flex  justify-start mt-[10rem]  flex-wrap">
                       {Object.keys(payIconList).map((item: string, index: number) => {
                         return (
@@ -462,8 +478,8 @@ export default function Home() {
                 </div>
                 {/* 右侧支付 */}
                 <div className=" w-[250rem] flex flex-col">
-                  <div className=" tracking-[1rem] flex  justify-center items-center text-[14rem] w-[100%] py-[10rem] px-[20rem] bg-[#ffe4e4] text-[#f65353] ">
-                    支付剩余时间 09:59
+                  <div className=" text-center tracking-[1rem] flex  justify-center items-center text-[14rem] w-[100%] py-[10rem] px-[20rem] bg-[#ffe4e4] text-[#f65353] ">
+                    {t('支付剩余时间')} 09:59
                   </div>
                   <div
                     className=" text-[14rem] flex cursor-pointer  text-[white]  justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727]  "
@@ -473,11 +489,11 @@ export default function Home() {
                         onSubmit()
                       } else {
                         // 微信/支付宝支付完成处理
-                        message.success('支付完成！')
+                        message.success(t('支付完成！'))
                       }
                     }}
                   >
-                    {selectedPaymentOption === 'creditCard' ? '确认担保' : '我已完成'}
+                    {selectedPaymentOption === 'creditCard' ? t('确认担保') : t('我已完成')}
                   </div>
                 </div>
               </div>

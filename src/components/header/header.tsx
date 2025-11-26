@@ -1,23 +1,19 @@
 import { Select, Space } from 'antd'
-import { useSelector, useDispatch } from 'react-redux'
-import { RootState } from '@/store/store'
-import { setLanguage } from '@/features/appSlice/app'
+import { useAppStore } from '@/store/storeZustand'
 
 export default function Header() {
-  const dispatch = useDispatch()
-  // 获取移动端状态和语言状态
-  const isMobile = useSelector((state: RootState) => state.app.isMobile)
-  const currentLanguage = useSelector((state: RootState) => state.app.language)
+  // 🎯 Zustand：超级简洁！直接解构使用
+  const { isMobile, language: currentLanguage, setLanguage } = useAppStore()
 
   const handleChange = (value: string) => {
     // 将 'ZH' 转换为 'zh'，'EN' 转换为 'en'
     const language = value === 'ZH' ? 'zh' : 'en'
-    // 更新 Redux store 中的语言状态
-    dispatch(setLanguage(language))
+    // 🎯 直接调用方法，无需 dispatch！
+    setLanguage(language)
     console.log(`语言已切换为: ${language}`)
   }
 
-  // 将 Redux 中的语言状态转换为 Select 需要的格式
+  // 将 Zustand store 中的语言状态转换为 Select 需要的格式
   const selectValue = currentLanguage === 'zh' ? 'ZH' : 'EN'
 
   const HeaderSelect = () => (

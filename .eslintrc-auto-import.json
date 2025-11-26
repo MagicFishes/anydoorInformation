@@ -12,6 +12,7 @@
     "lazy": true,
     "memo": true,
     "startTransition": true,
+    "theme": true,
     "useCallback": true,
     "useContext": true,
     "useDebugValue": true,

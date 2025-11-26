@@ -1,29 +1,29 @@
 // src/App.tsx
 import React, { useEffect, useMemo, useRef } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { PersistGate } from 'redux-persist/integration/react'
-import { persistor, RootState } from './store/store'
-import { setIsMobile } from '@/features/appSlice/app'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { generateRoutes } from './router/generateRoutes'
+import { useLanguage } from './hooks/useLanguage'
+import { useAppStore } from './store/storeZustand'
 
 export default function App() {
-  const dispatch = useDispatch()
-  const isMobile = useSelector((state: RootState) => state.app.isMobile)
-  const theme = useSelector((state: RootState) => state.app.theme) || 'dark'
+  // 🎯 Zustand：直接解构使用，超级简洁！
+  const { isMobile, theme, setIsMobile } = useAppStore()
   const prevIsMobileRef = useRef(isMobile)
+  
+  // 同步语言到 i18n
+  useLanguage()
 
-  // 初始化主题：从 Redux store 读取并应用到 document
+  // 初始化主题：从 Zustand store 读取并应用到 document
   useEffect(() => {
     const root = window.document.documentElement
     root.classList.remove('light', 'dark')
-    root.classList.add(theme)
+    root.classList.add(theme || 'dark')
   }, [theme])
 
   // 响应式判断：监听窗口大小变化
   useEffect(() => {
     const handleResize = () => {
-      dispatch(setIsMobile(window.innerWidth < 768))
+      setIsMobile(window.innerWidth < 768)
     }
 
     window.addEventListener('resize', handleResize)
@@ -32,7 +32,7 @@ export default function App() {
     return () => {
       window.removeEventListener('resize', handleResize)
     }
-  }, [dispatch])
+  }, [setIsMobile])
 
   // 🔥 监听 isMobile 变化，自动重定向到对应端的首页
   useEffect(() => {
@@ -64,9 +64,9 @@ export default function App() {
   }, [isMobile])
 
   return (
-    <PersistGate loading={null} persistor={persistor}>
+    <>
       {/* 🔥 添加 key 属性，当 isMobile 变化时强制重新挂载路由 */}
       <RouterProvider key={isMobile ? 'mobile' : 'pc'} router={router} />
-    </PersistGate>
+    </>
   )
 }

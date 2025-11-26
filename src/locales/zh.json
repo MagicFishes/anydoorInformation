@@ -1,0 +1,215 @@
+{
+  "上海宝格丽酒店": {
+    "zh": "上海宝格丽酒店",
+    "en": "Bulgari Hotel Shanghai"
+  },
+  "客人": {
+    "zh": "客人",
+    "en": "Guest"
+  },
+  "入住日期": {
+    "zh": "入住日期",
+    "en": "Check-in Date"
+  },
+  "离店日期": {
+    "zh": "离店日期",
+    "en": "Check-out Date"
+  },
+  "安全担保支付": {
+    "zh": "安全担保支付",
+    "en": "Secure Guarantee Payment"
+  },
+  "完成您的预订支付": {
+    "zh": "完成您的预订支付",
+    "en": "Complete Your Booking Payment"
+  },
+  "体验最可靠的酒店直连支付网关，官方认证，安全无忧": {
+    "zh": "体验最可靠的酒店直连支付网关，官方认证，安全无忧",
+    "en": "Experience the most reliable hotel direct payment gateway, officially certified, safe and secure"
+  },
+  "信用卡": {
+    "zh": "信用卡",
+    "en": "Credit Card"
+  },
+  "微信支付": {
+    "zh": "微信支付",
+    "en": "WeChat Pay"
+  },
+  "支付宝": {
+    "zh": "支付宝",
+    "en": "Alipay"
+  },
+  "卡号": {
+    "zh": "卡号",
+    "en": "Card Number"
+  },
+  "请输入卡号": {
+    "zh": "请输入卡号",
+    "en": "Please enter card number"
+  },
+  "请输入13-19位数字的卡号": {
+    "zh": "请输入13-19位数字的卡号",
+    "en": "Please enter a 13-19 digit card number"
+  },
+  "卡号格式不正确": {
+    "zh": "卡号格式不正确",
+    "en": "Invalid card number format"
+  },
+  "卡种": {
+    "zh": "卡种",
+    "en": "Card Type"
+  },
+  "请选择卡种": {
+    "zh": "请选择卡种",
+    "en": "Please select card type"
+  },
+  "有效期": {
+    "zh": "有效期",
+    "en": "Expiry Date"
+  },
+  "请输入有效期": {
+    "zh": "请输入有效期",
+    "en": "Please enter expiry date"
+  },
+  "格式：MM/YY（如：12/25）": {
+    "zh": "格式：MM/YY（如：12/25）",
+    "en": "Format: MM/YY (e.g., 12/25)"
+  },
+  "有效期不能是过去的日期": {
+    "zh": "有效期不能是过去的日期",
+    "en": "Expiry date cannot be in the past"
+  },
+  "安全码": {
+    "zh": "安全码",
+    "en": "Security Code"
+  },
+  "请输入安全码": {
+    "zh": "请输入安全码",
+    "en": "Please enter security code"
+  },
+  "请输入3-4位数字": {
+    "zh": "请输入3-4位数字",
+    "en": "Please enter 3-4 digits"
+  },
+  "打开": {
+    "zh": "打开",
+    "en": "Open"
+  },
+  "微信": {
+    "zh": "微信",
+    "en": "WeChat"
+  },
+  "扫一扫": {
+    "zh": "扫一扫",
+    "en": "Scan"
+  },
+  "扫描上方二维码进行支付": {
+    "zh": "扫描上方二维码进行支付",
+    "en": "Scan the QR code above to pay"
+  },
+  "直付链接已过期": {
+    "zh": "直付链接已过期",
+    "en": "Direct payment link has expired"
+  },
+  "出于安全原因，直付链接已过期。您可以在下面请求新链接。您将收到一封包含新直付链接的电子邮件。": {
+    "zh": "出于安全原因，直付链接已过期。您可以在下面请求新链接。您将收到一封包含新直付链接的电子邮件。",
+    "en": "For security reasons, the direct payment link has expired. You can request a new link below. You will receive an email containing a new direct payment link."
+  },
+  "担保说明": {
+    "zh": "担保说明",
+    "en": "Guarantee Instructions"
+  },
+  "全额手续费说明": {
+    "zh": "全额手续费说明",
+    "en": "Full Fee Instructions"
+  },
+  "信用卡登记仅作担保之用，实际付款需到现场办理。为了验证您的信用卡，您的对账单上可能会有1美元的临时授权。这笔款项将立即被删除。你不会被收取任何费用。": {
+    "zh": "信用卡登记仅作担保之用，实际付款需到现场办理。为了验证您的信用卡，您的对账单上可能会有1美元的临时授权。这笔款项将立即被删除。你不会被收取任何费用。",
+    "en": "Credit card registration is for guarantee purposes only. Actual payment must be made on-site. To verify your credit card, there may be a temporary $1 authorization on your statement. This amount will be immediately removed. You will not be charged any fees."
+  },
+  "鉴于全球电子支付系统的跨域支付，如果您使用微信（支付宝），将会收取（10%）的手续费，请知悉！": {
+    "zh": "鉴于全球电子支付系统的跨域支付，如果您使用微信（支付宝），将会收取（10%）的手续费，请知悉！",
+    "en": "Due to cross-border payments in the global electronic payment system, if you use WeChat Pay (Alipay), a (10%) handling fee will be charged. Please be aware!"
+  },
+  "您的支付信息收到加密保护": {
+    "zh": "您的支付信息收到加密保护",
+    "en": "Your payment information is encrypted and protected"
+  },
+  "支持的支付方式": {
+    "zh": "支持的支付方式",
+    "en": "Supported Payment Methods"
+  },
+  "支付剩余时间": {
+    "zh": "支付剩余时间",
+    "en": "Payment Remaining Time"
+  },
+  "确认担保": {
+    "zh": "确认担保",
+    "en": "Confirm Guarantee"
+  },
+  "我已完成": {
+    "zh": "我已完成",
+    "en": "I Have Completed"
+  },
+  "支付信息提交成功！": {
+    "zh": "支付信息提交成功！",
+    "en": "Payment information submitted successfully!"
+  },
+  "支付提交失败，请重试": {
+    "zh": "支付提交失败，请重试",
+    "en": "Payment submission failed, please try again"
+  },
+  "请检查表单填写是否正确": {
+    "zh": "请检查表单填写是否正确",
+    "en": "Please check if the form is filled correctly"
+  },
+  "支付完成！": {
+    "zh": "支付完成！",
+    "en": "Payment completed!"
+  },
+  "银行级风控": {
+    "zh": "银行级风控",
+    "en": "Bank-Level Risk Control"
+  },
+  "我们的基础设施使用银行级别的加密技术，随时保护您的财务数据。": {
+    "zh": "我们的基础设施使用银行级别的加密技术，随时保护您的财务数据。",
+    "en": "Our infrastructure uses bank-level encryption technology to protect your financial data at all times."
+  },
+  "PCI认证合规": {
+    "zh": "PCI认证合规",
+    "en": "PCI Certified Compliance"
+  },
+  "完全符合支付卡行业数据安全标准（Pcl DsS） 1级。": {
+    "zh": "完全符合支付卡行业数据安全标准（Pcl DsS） 1级。",
+    "en": "Fully compliant with Payment Card Industry Data Security Standard (PCI DSS) Level 1."
+  },
+  "验证商户": {
+    "zh": "验证商户",
+    "en": "Verified Merchant"
+  },
+  "通过国际卡计划和当地当局的官方认证，以确保安全旅行。": {
+    "zh": "通过国际卡计划和当地当局的官方认证，以确保安全旅行。",
+    "en": "Officially certified by international card programs and local authorities to ensure safe travel."
+  },
+  "银联": {
+    "zh": "银联",
+    "en": "UnionPay"
+  },
+  "的": {
+    "zh": "的",
+    "en": "'s"
+  },
+  "隐私政策": {
+    "zh": "隐私政策",
+    "en": "Privacy Policy"
+  },
+  "服务条款": {
+    "zh": "服务条款",
+    "en": "Terms of Service"
+  },
+  "二维码占位": {
+    "zh": "二维码占位",
+    "en": "QR Code Placeholder"
+  }
+}
+
