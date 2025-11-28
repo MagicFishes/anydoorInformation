@@ -1,6 +1,6 @@
 // src/layouts/BasicLayout.tsx - 基础布局（无侧边栏，用于普通页面）
-import React, { Suspense } from 'react'
-import { Outlet } from 'react-router-dom'
+import React, { Suspense, useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Spin } from 'antd'
 
 const LoadingFallback = () => (
@@ -15,6 +15,13 @@ const LoadingFallback = () => (
 )
 
 const BasicLayout: React.FC = () => {
+  const location = useLocation()
+
+  // 路由切换时滚动到顶部
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
   return (
     <div className="w-full min-h-screen text-[16rem]  bg-[white]">
       {/* 可选：顶部导航栏 */}

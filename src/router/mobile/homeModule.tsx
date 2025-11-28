@@ -6,7 +6,7 @@ const MobileHome = lazy(() => import('@/pages/mobile/home'))
 
 // 移动端首页模块
 export const mobileHomeModule: RouteObject = {
-  index: true,
+  path: '',
   element: <MobileHome />,
   meta: { 
     key: 'mobile-home', 

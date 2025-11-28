@@ -1,6 +1,6 @@
 // src/layouts/MobileLayout.tsx
-import React, { Suspense } from 'react'
-import { Outlet } from 'react-router-dom'
+import React, { Suspense, useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Spin } from 'antd'
 
 const LoadingFallback = () => (
@@ -15,6 +15,13 @@ const LoadingFallback = () => (
 )
 
 const MobileLayout: React.FC = () => {
+  const location = useLocation()
+
+  // 路由切换时滚动到顶部
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
   return (
     <div className="mobile-layout min-h-screen flex flex-col">
       {/* 移动端头部 */}

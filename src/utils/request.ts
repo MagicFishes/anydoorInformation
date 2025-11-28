@@ -33,11 +33,15 @@ axiosInstance.interceptors.request.use(
 
 // 响应拦截器
 axiosInstance.interceptors.response.use(
-  (response: AxiosResponse<ResponseType>) => {
-    const { code, message: msg, success } = response.data
+  (response: AxiosResponse<any>) => {
+    const { code, message: msg, success } = response.data || {}
     
-    // 业务逻辑成功
+    // 业务逻辑成功：支持 code === 200 或 code === "00000" 的情况
     if (success && code === 200) {
+      return response
+    }
+    // 支持字符串 code "00000" 表示成功的情况
+    if (code === "00000" || code === 200) {
       return response
     }
     

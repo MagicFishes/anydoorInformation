@@ -1,17 +1,18 @@
 // Zustand Store - 轻量级状态管理（替代 Redux）
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { updateLanguage } from '@/i18n'
 
 interface AppState {
   // 状态
   isMobile: boolean
   theme: 'light' | 'dark'
-  language: 'en' | 'zh'
+  language: 'en-US' | 'zh-CN'
   
   // 方法（Actions）
   setIsMobile: (isMobile: boolean) => void
   setTheme: (theme: 'light' | 'dark') => void
-  setLanguage: (language: 'en' | 'zh') => void
+  setLanguage: (language: 'en-US' | 'zh-CN') => void
   toggleTheme: () => void
   toggleLanguage: () => void
 }
@@ -28,18 +29,25 @@ export const useAppStore = create<AppState>()(
       // isMobile：不会被持久化（见 partialize），每次页面加载时在组件中重新计算
       isMobile: false, // 占位值，App.tsx 中会在组件挂载时立即设置正确值
       theme: 'dark' as const, // 默认值，会被 localStorage 中的值覆盖（如果存在）
-      language: 'zh' as const, // 默认值，会被 localStorage 中的值覆盖（如果存在）
+      language: 'zh-CN' as const, // 默认值，会被 localStorage 中的值覆盖（如果存在）
       
       // Actions（方法）- 直接在 store 中定义，无需额外文件
       setIsMobile: (isMobile) => set({ isMobile }),
       setTheme: (theme) => set({ theme }),
-      setLanguage: (language) => set({ language }),
+      setLanguage: (language) => {
+        set({ language })
+        // 自动同步更新 i18n 语言
+        updateLanguage(language)
+      },
       toggleTheme: () => set((state) => ({ 
         theme: state.theme === 'light' ? 'dark' : 'light' 
       })),
-      toggleLanguage: () => set((state) => ({ 
-        language: state.language === 'en' ? 'zh' : 'en' 
-      })),
+      toggleLanguage: () => set((state) => {
+        const newLanguage = state.language === 'en-US' ? 'zh-CN' : 'en-US'
+        // 自动同步更新 i18n 语言
+        updateLanguage(newLanguage)
+        return { language: newLanguage }
+      }),
     }),
     {
       name: 'app-store', // localStorage key

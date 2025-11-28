@@ -46,14 +46,14 @@ export default function App() {
     // 获取当前路径
     const currentPath = window.location.pathname
     
-    // 如果从 PC 切换到移动端，且当前在 PC 路径上（排除 /login 等公共路径）
-    if (isMobile && !currentPath.startsWith('/mobile') && !currentPath.startsWith('/login')) {
-      window.location.href = '/mobile'
+    // 如果从 PC 切换到移动端，重定向到根路径（排除 /login 等公共路径）
+    if (isMobile && !currentPath.startsWith('/login') && currentPath !== '/') {
+      window.location.href = '/'
     }
     
-    // 如果从移动端切换到 PC，且当前在移动端路径上
-    if (!isMobile && currentPath.startsWith('/mobile')) {
-      window.location.href = '/home/page'
+    // 如果从移动端切换到 PC，重定向到根路径
+    if (!isMobile && currentPath !== '/') {
+      window.location.href = '/'
     }
   }, [isMobile])
 

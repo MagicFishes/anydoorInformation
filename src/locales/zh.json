@@ -9,11 +9,11 @@
   },
   "入住日期": {
     "zh": "入住日期",
-    "en": "Check-in Date"
+    "en": "CheckIn"
   },
   "离店日期": {
     "zh": "离店日期",
-    "en": "Check-out Date"
+    "en": "CheckOut"
   },
   "安全担保支付": {
     "zh": "安全担保支付",
@@ -210,6 +210,30 @@
   "二维码占位": {
     "zh": "二维码占位",
     "en": "QR Code Placeholder"
+  },
+  "订单编号": {
+    "zh": "订单编号",
+    "en": "Order Number"
+  },
+  "名字": {
+    "zh": "名字",
+    "en": "First Name"
+  },
+  "姓氏": {
+    "zh": "姓氏",
+    "en": "Last Name"
+  },
+  "房型": {
+    "zh": "房型",
+    "en": "Room Type"
+  },
+  "数量": {
+    "zh": "数量",
+    "en": "Quantity"
+  },
+  "总价": {
+    "zh": "总价",
+    "en": "Total Price"
   }
 }
 

@@ -9,8 +9,9 @@ type TranslationItem = {
 }
 
 // 将中文键名的翻译文件转换为 i18next 需要的格式
+// 使用 zh-CN 和 en-US 作为语言代码
 const resources = {
-  zh: {
+  'zh-CN': {
     translation: Object.fromEntries(
       Object.entries(zhTranslations as Record<string, TranslationItem>).map(([key, value]) => [
         key,
@@ -18,7 +19,7 @@ const resources = {
       ])
     ),
   },
-  en: {
+  'en-US': {
     translation: Object.fromEntries(
       Object.entries(zhTranslations as Record<string, TranslationItem>).map(([key, value]) => [
         key,
@@ -29,7 +30,7 @@ const resources = {
 }
 
 // 从 localStorage 或默认值获取初始语言
-const getInitialLanguage = (): 'zh' | 'en' => {
+const getInitialLanguage = (): 'zh-CN' | 'en-US' => {
   if (typeof window !== 'undefined') {
     // 尝试从 localStorage 读取（Zustand persist 会保存为 'app-store'）
     try {
@@ -37,28 +38,32 @@ const getInitialLanguage = (): 'zh' | 'en' => {
       if (persistedState) {
         const parsed = JSON.parse(persistedState)
         if (parsed.state?.language) {
-          return parsed.state.language
+          const lang = parsed.state.language
+          // 只接受 zh-CN 或 en-US
+          if (lang === 'zh-CN' || lang === 'en-US') {
+            return lang as 'zh-CN' | 'en-US'
+          }
         }
       }
     } catch (e) {
       // 解析失败，使用默认值
     }
   }
-  return 'zh' // 默认中文
+  return 'zh-CN' // 默认中文
 }
 
 // 初始化 i18next
 i18n.use(initReactI18next).init({
   resources,
   lng: getInitialLanguage(), // 从存储中读取或使用默认值
-  fallbackLng: 'zh',
+  fallbackLng: 'zh-CN',
   interpolation: {
     escapeValue: false, // React 已经转义了
   },
 })
 
 // 更新语言的函数
-export const updateLanguage = (language: 'zh' | 'en') => {
+export const updateLanguage = (language: 'zh-CN' | 'en-US') => {
   i18n.changeLanguage(language)
 }
 

@@ -1,4 +1,3 @@
-import { Navigate } from 'react-router-dom'
 import { lazy } from 'react'
 import { RouteObject } from '../types'
 
@@ -7,24 +6,11 @@ const HomeManager = lazy(() => import('@/pages/HomeManager/home/index'))
 
 // 首页模块路由配置
 export const homeModule: RouteObject = {
-  path: 'homeManager',
+  path: '',
+  element: <HomeManager />,
   meta: {
-    key: 'homeManager',
-    label: '首页模块',
+    key: 'home',
+    label: '主页',
     icon: '🏠'
-  },
-  children: [
-    {
-      index: true,
-      element: <Navigate to="home" replace />
-    },
-    {
-      path: 'home',
-      element: <HomeManager />,
-      meta: {
-        key: 'home',
-        label: '主页'
-      }
-    }
-  ]
+  }
 }

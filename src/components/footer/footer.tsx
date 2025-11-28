@@ -1,5 +1,6 @@
 import { useIsMobile } from '@/store/storeZustand'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 type Props = {
   title: string
@@ -29,6 +30,8 @@ export default function Footer(item: Props) {
   const isMobile = useIsMobile()
   // 使用翻译
   const { t } = useTranslation()
+  // 使用 React Router 导航
+  const navigate = useNavigate()
 
   return (
     <>
@@ -46,10 +49,16 @@ export default function Footer(item: Props) {
         <div
           className={`${isMobile ? 'w-full' : 'w-[30%]'} flex ${isMobile ? 'justify-center mt-[20rem] ' : 'justify-end items-end'}`}
         >
-          <div className="text-[14rem] mr-[10rem] text-gray-500 cursor-pointer hover:text-blue-500 underline">
+          <div
+            onClick={() => navigate('/CommonPage/privacy-policy')}
+            className="text-[14rem] mr-[10rem] text-gray-500 cursor-pointer hover:text-blue-500 underline"
+          >
             {t('隐私政策')}
           </div>
-          <div className="text-[14rem] mr-[10rem] text-gray-500 cursor-pointer hover:text-blue-500 underline">
+          <div
+            onClick={() => navigate('/CommonPage/terms-service')}
+            className="text-[14rem] mr-[10rem] text-gray-500 cursor-pointer hover:text-blue-500 underline"
+          >
             {t('服务条款')}
           </div>
         </div>
