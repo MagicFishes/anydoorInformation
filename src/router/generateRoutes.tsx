@@ -9,6 +9,7 @@ import NotFound from '@/pages/NotFound/NotFound'
 import RedirectWithParams from './RedirectWithParams'
 import PrivacyPolicy from '@/pages/CommonPage/privacyPolicy/index'
 import TermsService from '@/pages/CommonPage/termsService/index'
+import PaymentSuccess from '@/pages/CommonPage/paymentSuccess/index'
 // 独立页面
 // const Login = lazy(() => import('@/pages/Login/Login'))
 const CommonPageList:RouteObject[]=[
@@ -19,6 +20,10 @@ const CommonPageList:RouteObject[]=[
   {
     path: 'terms-service',
     element: <TermsService />,
+  },
+  {
+    path: 'payment-success',
+    element: <PaymentSuccess />,
   },
 ]
 /**

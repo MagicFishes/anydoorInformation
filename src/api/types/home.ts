@@ -3,7 +3,7 @@ export interface QueryOrderInfoRes {
     code: string;
     message: string;
     data: {
-      orderNo: number;
+      orderNo: string;
       hotelId: number;
       hotelName: string;
       hotelThumbnail: string;
@@ -24,4 +24,31 @@ export interface QueryOrderInfoRes {
     version: string;
     timestamp: string;
   }
+  // 参数接口
+export interface CreatePayInfoParams {
+  orderNo: string;
+  payChannel: string;
+}
+
+// 响应接口
+export interface CreatePayInfoRes {
+  code: string;
+  message: string;
+  data: {
+    payInfoId: number;
+    payBody: string;
+    createdTime?: string; // 创建日期 yyyy-MM-dd HH:mm:ss
+  };
+  version: string;
+  timestamp: string;
+}
+// 响应接口
+export interface QueryPayInfoRes {
+  code: string;
+  message: string;
+  data: string;
+  version: string;
+  timestamp: string;
+}
+
   

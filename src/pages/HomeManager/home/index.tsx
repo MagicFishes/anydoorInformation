@@ -1,16 +1,19 @@
 import Footer from '@/components/footer/footer'
 import Header from '@/components/header/header'
 import { Input, Select, Button, message, Spin } from 'antd'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import HomeApi from '@/api/home'
-import { QueryOrderInfoRes } from '@/api/types/home'
+import { QueryOrderInfoRes, CreatePayInfoRes } from '@/api/types/home'
 import { useAppStore } from '@/store/storeZustand'
 import { updateLanguage } from '@/i18n'
+import { HotelInfoCard } from './components/HotelInfoCard'
+import { AdvantageCard } from './components/AdvantageCard'
+import { CreditCardForm } from './components/CreditCardForm'
 
 // 创建表单验证规则的函数（支持翻译）
 const createPaymentFormSchema = (t: (key: string) => string) => {
@@ -64,6 +67,7 @@ const createPaymentFormSchema = (t: (key: string) => string) => {
       .regex(/^\d{3,4}$/, t('请输入3-4位数字')),
   })
 }
+// 支付方式图标
 const payIconList = {
   Visa: '/image/home/payIcon/Visa.png',
   Mastercard: '/image/home/payIcon/Mastercard.png',
@@ -72,9 +76,79 @@ const payIconList = {
   Dinersclub: '/image/home/payIcon/DinersClub.png',
   JCB: '/image/home/payIcon/JCB.png',
 }
+
+// 格式化倒计时显示（秒数转换为 MM:SS）
+const formatCountdown = (seconds: number) => {
+  const safeSeconds = Math.max(0, seconds || 0)
+  const minutes = Math.floor(safeSeconds / 60)
+  const remainingSeconds = safeSeconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
+}
+
+// 只负责右下角倒计时显示的小组件，内部自己每秒更新，不影响父组件
+interface CountdownTimerProps {
+  createdTime: string
+  duration?: number // 默认 600 秒
+  onExpire?: () => void
+  label: string
+  className?: string
+}
+
+const CountdownTimer = ({
+  createdTime,
+  duration = 600,
+  onExpire,
+  label,
+  className = '',
+}: CountdownTimerProps) => {
+  // 计算当前剩余时间
+  const calcRemaining = useCallback(() => {
+    if (!createdTime) return 0
+    const now = Date.now()
+    const created = new Date(createdTime).getTime()
+    const elapsed = Math.floor((now - created) / 1000)
+    return Math.max(0, duration - elapsed)
+  }, [createdTime, duration])
+
+  const [remaining, setRemaining] = useState<number>(() => calcRemaining())
+
+  useEffect(() => {
+    // 初始化一次
+    const initial = calcRemaining()
+    setRemaining(initial)
+
+    if (initial <= 0) {
+      onExpire && onExpire()
+      return
+    }
+
+    const interval = setInterval(() => {
+      const next = calcRemaining()
+      setRemaining(next)
+      if (next <= 0) {
+        clearInterval(interval)
+        onExpire && onExpire()
+      }
+    }, 1000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [calcRemaining, onExpire])
+
+  return (
+    <div
+      className={`text-center tracking-[1rem] flex justify-center items-center text-[14rem] w-[100%] py-[10rem] px-[20rem] bg-[#ffe4e4] text-[#f65353] ${className}`}
+    >
+      {label} {remaining > 0 ? formatCountdown(remaining) : '00:00'}
+    </div>
+  )
+}
+
 export default function Home() {
   // 使用翻译
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   // 获取全局语言状态和方法
   const { language: globalLanguage, setLanguage } = useAppStore()
@@ -155,8 +229,8 @@ export default function Home() {
     }
 
     fetchOrderInfo()
-  // }, [languageCode, encodeOrderNo, t]) // 添加 globalLanguage 依赖，确保切换语言时重新请求
-  }, [ globalLanguage]) // 添加 globalLanguage 依赖，确保切换语言时重新请求
+    // }, [languageCode, encodeOrderNo, t]) // 添加 globalLanguage 依赖，确保切换语言时重新请求
+  }, [globalLanguage]) // 添加 globalLanguage 依赖，确保切换语言时重新请求
   // 使用 React Hook Form + Zod
   const {
     register,
@@ -224,6 +298,162 @@ export default function Home() {
     [t]
   )
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>('creditCard')
+  // 二维码相关状态
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('')
+  const [qrCodeLoading, setQrCodeLoading] = useState<boolean>(false)
+  // 支付信息ID和轮询相关状态
+  const [payInfoId, setPayInfoId] = useState<number | null>(null)
+  const [pollingInterval, setPollingInterval] = useState<ReturnType<typeof setInterval> | null>(
+    null
+  )
+  const [needRefreshQrCode, setNeedRefreshQrCode] = useState<boolean>(false)
+  // 倒计时相关状态（仅保存创建时间，具体倒计时在子组件中处理）
+  const [createdTime, setCreatedTime] = useState<string | null>(null)
+
+  // 切换支付方式时调用支付接口获取二维码
+  useEffect(() => {
+    const fetchQrCode = async () => {
+      // 只有在选择微信支付或支付宝时才调用接口
+      if (
+        (selectedPaymentOption === 'wechatPay' || selectedPaymentOption === 'alipay') &&
+        orderInfo?.orderNo
+      ) {
+        setQrCodeLoading(true)
+        setQrCodeUrl('') // 清空之前的二维码
+
+        try {
+          const payChannel = selectedPaymentOption === 'wechatPay' ? 'WX_PAY' : 'ALI_PAY'
+          const response = await HomeApi.createPayInfo({
+            orderNo: orderInfo.orderNo,
+            payChannel: payChannel,
+          })
+
+          const responseData = response.data as any
+          if (responseData.code === '00000' && responseData.data?.payBody) {
+            // 保存 payInfoId
+            if (responseData.data.payInfoId) {
+              setPayInfoId(responseData.data.payInfoId)
+            }
+            // 保存 createdTime
+            if (responseData.data.createdTime) {
+              setCreatedTime(responseData.data.createdTime)
+            }
+            // payBody 可能是 URL 或 base64 字符串
+            const payBody = responseData.data.payBody
+            // 判断是否是 base64 格式
+            if (
+              payBody.startsWith('data:image') ||
+              payBody.startsWith('/9j/') ||
+              payBody.startsWith('iVBORw0KGgo')
+            ) {
+              // 如果是 base64，检查是否有前缀
+              const qrUrl = payBody.startsWith('data:')
+                ? payBody
+                : `data:image/png;base64,${payBody}`
+              setQrCodeUrl(qrUrl)
+            } else {
+              // 如果是 URL，直接使用
+              setQrCodeUrl(payBody)
+            }
+            // 重置需要刷新二维码的状态
+            setNeedRefreshQrCode(false)
+            // 重置超时状态
+            setTimeExpired(false)
+          } else {
+            message.error(responseData.message || t('获取支付二维码失败'))
+          }
+        } catch (error: any) {
+          console.error('获取支付二维码失败:', error)
+          message.error(error?.message || t('获取支付二维码失败，请重试'))
+        } finally {
+          setQrCodeLoading(false)
+        }
+      } else {
+        // 切换到信用卡支付时清空二维码和轮询、倒计时
+        setQrCodeUrl('')
+        setPayInfoId(null)
+        setNeedRefreshQrCode(false)
+        setCreatedTime(null)
+        if (pollingInterval) {
+          clearInterval(pollingInterval)
+          setPollingInterval(null)
+        }
+      }
+    }
+
+    fetchQrCode()
+  }, [selectedPaymentOption, orderInfo?.orderNo, t])
+
+  // 轮询支付状态 - 暂时禁用自动轮询
+  useEffect(() => {
+    // 只有在二维码显示成功且有 payInfoId 时才开始轮询
+    if (!qrCodeUrl || !payInfoId || qrCodeLoading) {
+      return
+    }
+
+    // 如果已经有轮询在进行，先清除
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+    }
+
+    // 开始轮询，每隔3秒查询一次
+    const interval = setInterval(async () => {
+      try {
+        const response = await HomeApi.queryPayInfo(payInfoId)
+        const responseData = response.data as any
+
+        if (responseData.code === '00000' && responseData.data) {
+          const status = responseData.data
+
+          if (status === 'SUCCESS') {
+            // 支付成功，停止轮询并跳转
+            clearInterval(interval)
+            setPollingInterval(null)
+            navigate('/CommonPage/payment-success')
+          } else if (status === 'PROGRESS') {
+            // 支付进行中，显示重新获取二维码的样式
+            setNeedRefreshQrCode(false)
+          } else {
+            setNeedRefreshQrCode(true)
+            clearInterval(interval)
+          }
+        }
+      } catch (error) {
+        console.error('查询支付状态失败:', error)
+        // 终止轮询
+        clearInterval(interval)
+      }
+    }, 3000) // 每3秒轮询一次
+
+    setPollingInterval(interval)
+
+    // 清理函数：组件卸载或依赖变化时清除定时器
+    return () => {
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [qrCodeUrl, payInfoId, qrCodeLoading, navigate])
+
+  // 清理轮询：当切换支付方式或组件卸载时
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+      }
+    }
+  }, [selectedPaymentOption])
+
+  // 倒计时到期后的处理：标记超时、展示重新获取二维码、停止轮询
+  const handleCountdownExpire = useCallback(() => {
+    setTimeExpired(true)
+    setNeedRefreshQrCode(true)
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      setPollingInterval(null)
+    }
+  }, [pollingInterval])
+
   // 支付选项
   const paymentOptions = useMemo(
     () => [
@@ -287,105 +517,13 @@ export default function Home() {
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}/${month}/${day}`
   }
-
-  // 获取客人姓名（取第一个客人）
-  const customerName = orderInfo?.customerInfos?.[0]
-    ? `${orderInfo.customerInfos[0].firstName} ${orderInfo.customerInfos[0].lastName}`
-    : ''
-
-  // 表单
-
   return (
     <div className=" w-full min-h-screen flex flex-col ">
       <Header />
       <div className="w-full flex-1 flex flex-col">
         <div className=" w-full flex gap-[1%]  justify-between">
-          <div className="w-[32.7%] border-[1px] border-solid border-gray-300  ">
-            {/* 图片酒店信息 */}
-            <div className="w-full min-h-[180rem] ">
-              <img
-                src={orderInfo?.hotelThumbnail || '/image/home/home1.png'}
-                alt={orderInfo?.hotelName || ''}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="w-full  p-[20rem] ">
-              {/* 酒店信息 */}
-              <div className="text-[14rem] flex-col flex  mb-[20rem] border-b-[1rem] border-solid border-gray-300 pb-[20rem]">
-                <div className="text-[18rem] mb-[5rem] tracking-[2rem]  ">
-                  {orderInfo?.hotelName || t('酒店名称')}
-                </div>
-                <div className="text-[14rem] text-gray-400 ">{orderInfo?.hotelEnName || ''}</div>
-                <div className="text-[14rem] text-gray-400 ">{orderInfo?.hotelAddress || ''}</div>
-              </div>
-              {/* 入住信息 */}
-              <div className="text-[14rem] flex-col flex ">
-                {/* <div className="text-[16rem]  mb-[15rem]   flex  justify-between  ">
-                  <div className='text-gray-400'>{t('订单编号')}</div>
-                  <div className='font-bold tracking-[1rem]'>{orderInfo?.orderNo || ''}</div>
-                </div> */}
-
-                {/* 入住日期  */}
-                <div className="flex justify-between">
-                  <div className="text-[14rem]  flex-col flex mb-[15rem] ">
-                    <div className="text-gray-400 mb-[5rem] ">{t('入住日期')}</div>
-                    <div className="text-[16rem] font-bold  tracking-[1rem]">
-                      {orderInfo?.checkIn ? formatDate(orderInfo.checkIn) : '-'}
-                    </div>
-                  </div>
-                  <div className="text-[14rem]  flex-col flex  mb-[15rem]">
-                    <div className=" text-gray-400 text-end mb-[5rem] ">
-                      {t('离店日期')}
-                    </div>
-                    <div className="text-[16rem] font-bold text-end  tracking-[1rem]">
-                      {orderInfo?.checkOut ? formatDate(orderInfo.checkOut) : '-'}
-                    </div>
-                  </div>
-                </div>
-                {/* 入住信息 */}
-                {/* <div className="text-[16rem] mb-[5rem] tracking-[2rem]   ">入住信息</div> */}
-                {orderInfo?.customerInfos.map((item, index) => {
-                  return (
-                    <div key={index} className="text-[14rem]  flex-col flex mb-[15rem] ">
-                      {/* <div className=" text-gray-400 mb-[5rem] tracking-[1rem]">
-                        {t('客人')}
-                        {index + 1}
-                      </div>
-                      <div className="text-[18rem]  tracking-[1rem]">
-                        {item.firstName} {item.lastName}
-                      </div> */}
-                      <div className=" flex justify-between mb-[5rem] text-gray-400">
-                        <div>{t('名字')}</div>
-                        <div>{t('姓氏')}</div>
-                      </div>
-                      <div className="flex justify-between font-bold tracking-[1rem]">
-                        <div>{item.firstName}</div>
-                        <div>{item.lastName}</div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              {/* 房型 */}
-              <div className="text-[14rem]     flex flex-col  mb-[15rem] ">
-                <div className='flex justify-between mb-[5rem] text-gray-400 '>
-                  <div>{t('房型')}</div>
-                  <div>{t('数量')}</div>
-                </div>
-                <div className="flex justify-between font-bold tracking-[1rem]">
-                  <div>{orderInfo?.roomName || ''}</div>
-                  <div  className='min-w-[20%] text-end'>x{orderInfo?.roomNum || ''}</div>
-                </div>
-              </div>
-              {/* 总价 */}
-              <div className="text-[16rem] mb-[5rem]    flex flex-col  border-t-[1px] border-solid border-gray-300 pt-[20rem] mt-[20rem] ">
-                <div className='flex justify-between mb-[5rem]  font-bold tracking-[1rem]'>
-                  <div className='text-gray-400'>{t('总价')}</div>
-                  <div className='font-bold tracking-[1rem]'>{orderInfo?.currency}{orderInfo?.amount || ''}</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* 抽离后的酒店信息卡片 */}
+          <HotelInfoCard orderInfo={orderInfo} formatDate={formatDate} />
           <div className="flex-1 flex-col flex border-[1px] pb-[18rem] border-solid border-gray-300  ">
             {/* 安全担保支付 */}
             <div className="w-full  bg-[#dfffdf]  py-[10rem]  flex justify-center items-center mb-[20rem">
@@ -428,193 +566,122 @@ export default function Home() {
                   )
                 })}
               </div>
-              {/* 时间未过期 */}
-              {!timeExpired && (
-                <div className="border-b-[1px] border-solid border-gray-300 pt-[20rem] pb-[20rem]">
-                  {/* 根据支付选项显示不同内容 */}
-                  {selectedPaymentOption === 'creditCard' && (
-                    <form id="payment-form" onSubmit={onSubmit}>
-                      <div className="grid grid-cols-2 gap-[20rem]">
-                        {/* 第一项：卡号 */}
-                        <div className="flex flex-col">
-                          <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                            {t('卡号')}
-                          </label>
-                          <Controller
-                            name="cardNumber"
-                            control={control}
-                            render={({ field }) => (
-                              <Input
-                                {...field}
-                                placeholder={t('请输入卡号')}
-                                maxLength={23}
-                                className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
-                                status={errors.cardNumber ? 'error' : ''}
-                                onChange={e => {
-                                  // 自动格式化：每4位数字后添加空格
-                                  const inputValue = e.target.value
-                                  // 移除所有空格和非数字字符
-                                  const digitsOnly = inputValue
-                                    .replace(/\s/g, '')
-                                    .replace(/\D/g, '')
-                                  // 每4位数字后添加空格
-                                  const formattedValue =
-                                    digitsOnly.match(/.{1,4}/g)?.join(' ') || digitsOnly
-                                  // 更新字段值
-                                  field.onChange(formattedValue)
-                                }}
-                                value={field.value || ''}
-                              />
-                            )}
+              {/* 支付主体区域（不再因为超时而整体隐藏） */}
+              <div className="border-b-[1px] border-solid border-gray-300 pt-[20rem] pb-[20rem]">
+                {/* 根据支付选项显示不同内容 */}
+                {selectedPaymentOption === 'creditCard' && (
+                  <CreditCardForm
+                    control={control}
+                    register={register}
+                    errors={errors}
+                    t={t}
+                    onSubmit={onSubmit}
+                  />
+                )}
+                {(selectedPaymentOption === 'wechatPay' || selectedPaymentOption === 'alipay') && (
+                  <div className="w-full flex justify-center items-center flex-col">
+                    <div className=" w-[200rem] h-[200rem]  border-[1px] border-solid border-gray-300 flex justify-center items-center relative">
+                      {qrCodeLoading ? (
+                        <Spin size="large" />
+                      ) : qrCodeUrl ? (
+                        <>
+                          <img
+                            src={qrCodeUrl}
+                            // alt={t('支付二维码')}
+                            className="w-full h-full object-contain"
                           />
-                          {errors.cardNumber && (
-                            <span className="text-red-500 text-[12rem] mt-[5rem]">
-                              {errors.cardNumber.message}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* 第二项：卡种 */}
-                        <div className="flex flex-col">
-                          <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                            {t('卡种')}
-                          </label>
-                          <Controller
-                            name="cardType"
-                            control={control}
-                            render={({ field }) => (
-                              <Select
-                                {...field}
-                                value={field.value || undefined}
-                                placeholder={t('请选择卡种')}
-                                className="text-[14rem] [&_.ant-select-selector]:!bg-[#f6f6f6]"
-                                style={{ height: '40rem' }}
-                                status={errors.cardType ? 'error' : ''}
-                                options={[
-                                  { value: 'visa', label: 'Visa' },
-                                  { value: 'mastercard', label: 'MasterCard' },
-                                  { value: 'amex', label: 'American Express' },
-                                  { value: 'unionpay', label: t('银联') },
-                                ]}
-                              />
-                            )}
-                          />
-                          {errors.cardType && (
-                            <span className="text-red-500 text-[12rem] mt-[5rem]">
-                              {errors.cardType.message}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* 第三项：有效期 */}
-                        <div className="flex flex-col">
-                          <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                            {t('有效期')}
-                          </label>
-                          <Controller
-                            name="expiryDate"
-                            control={control}
-                            render={({ field }) => (
-                              <Input
-                                {...field}
-                                placeholder="MM/YY"
-                                maxLength={5}
-                                className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
-                                status={errors.expiryDate ? 'error' : ''}
-                                onChange={e => {
-                                  // 自动格式化：MM/YY
-                                  const inputValue = e.target.value
-                                  // 移除所有非数字字符（包括斜杠）
-                                  let digitsOnly = inputValue.replace(/\D/g, '')
-                                  // 限制最多4位数字
-                                  digitsOnly = digitsOnly.slice(0, 4)
-                                  // 当输入超过2位时，自动添加斜杠
-                                  let formattedValue = digitsOnly
-                                  if (digitsOnly.length >= 2) {
-                                    formattedValue =
-                                      digitsOnly.slice(0, 2) + '/' + digitsOnly.slice(2, 4)
+                          {needRefreshQrCode && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center">
+                              <div className="text-white text-[14rem] mb-[10rem] text-center px-[20rem]">
+                                {t('二维码已过期，请重新获取')}
+                              </div>
+                              <Button
+                                type="primary"
+                                size="small"
+                                onClick={async () => {
+                                  if (!orderInfo?.orderNo) return
+                                  setQrCodeLoading(true)
+                                  setNeedRefreshQrCode(false)
+                                  try {
+                                    const payChannel =
+                                      selectedPaymentOption === 'wechatPay' ? 'WX_PAY' : 'ALI_PAY'
+                                    const response = await HomeApi.createPayInfo({
+                                      orderNo: orderInfo.orderNo,
+                                      payChannel: payChannel,
+                                    })
+                                    const responseData = response.data as any
+                                    if (
+                                      responseData.code === '00000' &&
+                                      responseData.data?.payBody
+                                    ) {
+                                      if (responseData.data.payInfoId) {
+                                        setPayInfoId(responseData.data.payInfoId)
+                                      }
+                                      // 更新 createdTime
+                                      if (responseData.data.createdTime) {
+                                        setCreatedTime(responseData.data.createdTime)
+                                      }
+                                      const payBody = responseData.data.payBody
+                                      if (
+                                        payBody.startsWith('data:image') ||
+                                        payBody.startsWith('/9j/') ||
+                                        payBody.startsWith('iVBORw0KGgo')
+                                      ) {
+                                        const qrUrl = payBody.startsWith('data:')
+                                          ? payBody
+                                          : `data:image/png;base64,${payBody}`
+                                        setQrCodeUrl(qrUrl)
+                                      } else {
+                                        setQrCodeUrl(payBody)
+                                      }
+                                      // 重置超时状态
+                                      setTimeExpired(false)
+                                      message.success(t('二维码已更新'))
+                                    } else {
+                                      message.error(responseData.message || t('获取支付二维码失败'))
+                                    }
+                                  } catch (error: any) {
+                                    console.error('重新获取支付二维码失败:', error)
+                                    message.error(error?.message || t('获取支付二维码失败，请重试'))
+                                  } finally {
+                                    setQrCodeLoading(false)
                                   }
-                                  // 更新字段值
-                                  field.onChange(formattedValue)
                                 }}
-                                value={field.value || ''}
-                              />
-                            )}
-                          />
-                          {errors.expiryDate && (
-                            <span className="text-red-500 text-[12rem] mt-[5rem]">
-                              {errors.expiryDate.message}
-                            </span>
+                                className="h-[30rem] text-[12rem]"
+                              >
+                                {t('重新获取二维码')}
+                              </Button>
+                            </div>
                           )}
-                        </div>
-
-                        {/* 第四项：安全码 */}
-                        <div className="flex flex-col">
-                          <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                            {t('安全码')}
-                          </label>
-                          <Input
-                            {...register('cvv')}
-                            type="password"
-                            placeholder="CVV/CVC"
-                            maxLength={4}
-                            autoComplete="cc-csc"
-                            className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
-                            status={errors.cvv ? 'error' : ''}
-                          />
-                          {errors.cvv && (
-                            <span className="text-red-500 text-[12rem] mt-[5rem]">
-                              {errors.cvv.message}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* 提交按钮 */}
-                      {/* <div className="mt-[30rem]">
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        block
-                        loading={isSubmitting}
-                        className="h-[50rem] text-[16rem] font-bold"
-                      >
-                        {isSubmitting ? '提交中...' : '确认支付'}
-                      </Button>
-                    </div> */}
-                    </form>
-                  )}
-                  {(selectedPaymentOption === 'wechatPay' ||
-                    selectedPaymentOption === 'alipay') && (
-                    <div className="w-full flex justify-center items-center flex-col">
-                      <div className=" w-[200rem] h-[200rem]  border-[1px] border-solid border-gray-300"></div>
-                      <div className="w-[100%] h-[50rem] flex justify-center items-center">
-                        <img className="h-[30rem] mr-[10rem]" src="/image/scanCode.png" alt="" />
-                        {selectedPaymentOption === 'wechatPay' && (
-                          <div>
-                            {t('打开')}{' '}
-                            <span className="text-[#1aad19] font-bold">{t('微信')}</span> {t('的')}{' '}
-                            <span className="text-[#1aad19] font-bold">{t('扫一扫')}</span>
-                          </div>
-                        )}
-                        {selectedPaymentOption === 'alipay' && (
-                          <div>
-                            {t('打开')}{' '}
-                            <span className="text-[#0d99ff] font-bold">{t('支付宝')}</span>{' '}
-                            {t('的')}{' '}
-                            <span className="text-[#0d99ff] font-bold">{t('扫一扫')}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-[14rem] tracking-[1rem] text-gray-400">
-                        {t('扫描上方二维码进行支付')}
-                      </div>
+                        </>
+                      ) : (
+                        <div className="text-[14rem] text-gray-400">{t('加载二维码中...')}</div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
-              {/* 时间已过期 */}
-              {timeExpired && (
+                    <div className="w-[100%] h-[50rem] flex justify-center items-center">
+                      <img className="h-[30rem] mr-[10rem]" src="/image/scanCode.png" alt="" />
+                      {selectedPaymentOption === 'wechatPay' && (
+                        <div>
+                          {t('打开')} <span className="text-[#1aad19] font-bold">{t('微信')}</span>{' '}
+                          {t('的')} <span className="text-[#1aad19] font-bold">{t('扫一扫')}</span>
+                        </div>
+                      )}
+                      {selectedPaymentOption === 'alipay' && (
+                        <div>
+                          {t('打开')}{' '}
+                          <span className="text-[#0d99ff] font-bold">{t('支付宝')}</span> {t('的')}{' '}
+                          <span className="text-[#0d99ff] font-bold">{t('扫一扫')}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-[14rem] tracking-[1rem] text-gray-400">
+                      {t('扫描上方二维码进行支付')}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* 时间已过期文案（暂时隐藏，仅保留代码方便以后开启） */}
+              {false && timeExpired && (
                 <div className="  flex flex-col mt-[20rem] ">
                   <div className="text-[16rem] font-bold tracking-[1rem]  font-bold">
                     {t('直付链接已过期')}
@@ -674,9 +741,14 @@ export default function Home() {
                 </div>
                 {/* 右侧支付 */}
                 <div className=" w-[250rem] flex flex-col">
-                  <div className=" text-center tracking-[1rem] flex  justify-center items-center text-[14rem] w-[100%] py-[10rem] px-[20rem] bg-[#ffe4e4] text-[#f65353] ">
-                    {t('支付剩余时间')} 09:59
-                  </div>
+                  {/* 信用卡不显示倒计时，只显示按钮；微信/支付宝显示倒计时 + 按钮 */}
+                  {selectedPaymentOption !== 'creditCard' && createdTime && (
+                    <CountdownTimer
+                      createdTime={createdTime}
+                      label={t('支付剩余时间')}
+                      onExpire={handleCountdownExpire}
+                    />
+                  )}
                   <div
                     className=" text-[14rem] flex cursor-pointer  text-[white]  justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727]  "
                     onClick={() => {
@@ -698,26 +770,9 @@ export default function Home() {
         </div>
         {/* 3列 */}
         <div className="w-full min-h-[220rem]  grid grid-cols-3 gap-[1%] mt-[30rem] mb-[50rem] ">
-          {showImageList.map((item, index) => {
-            return (
-              <div key={index} className="w-full py-[30rem] px-[50rem] border-[1px] border-solid border-gray-300 ">
-                <div className="flex flex-col h-full justify-between">
-                  <div className="flex justify-center ">
-                    <div
-                      className="w-[50rem] h-[50rem]  flex justify-center items-center rounded-[50%] mb-[10rem]"
-                      style={{ backgroundColor: item.bgColor }}
-                    >
-                      <img className="w-[30rem] h-[30rem]" src={item.image} alt="" />
-                    </div>
-                  </div>
-                  <div className="text-[18rem] font-bold tracking-[1rem] text-center mb-[10rem]">
-                    {item.title}
-                  </div>
-                  <div className="text-[14rem] text-gray-400 text-center">{item.description}</div>
-                </div>
-              </div>
-            )
-          })}
+          {showImageList.map((item, index) => (
+            <AdvantageCard key={index} item={item as any} />
+          ))}
         </div>
       </div>
       {/* footer */}
