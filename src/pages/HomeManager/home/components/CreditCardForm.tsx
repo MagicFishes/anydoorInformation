@@ -77,10 +77,10 @@ export const CreditCardForm = ({
                 style={{ height: '40rem' }}
                 status={errors.cardType ? 'error' : ''}
                 options={[
-                  { value: 'visa', label: 'Visa' },
-                  { value: 'mastercard', label: 'MasterCard' },
-                  { value: 'amex', label: 'American Express' },
-                  { value: 'unionpay', label: t('银联') },
+                  { value: 'VISA', label: 'Visa' },
+                  { value: 'MASTER', label: 'MasterCard' },
+                  { value: 'AMEX', label: 'American Express' },
+                  { value: 'UNIONPAY', label: t('银联') },
                 ]}
               />
             )}
@@ -103,7 +103,7 @@ export const CreditCardForm = ({
             render={({ field }) => (
               <Input
                 {...field}
-                placeholder="MM/YY"
+                placeholder={t('MM/YY')}
                 maxLength={5}
                 className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
                 status={errors.expiryDate ? 'error' : ''}

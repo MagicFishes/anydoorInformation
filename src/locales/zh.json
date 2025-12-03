@@ -75,6 +75,10 @@
     "zh": "格式：MM/YY（如：12/25）",
     "en": "Format: MM/YY (e.g., 12/25)"
   },
+  "MM/YY": {
+    "zh": "月/年",
+    "en": "MM/YY"
+  },
   "有效期不能是过去的日期": {
     "zh": "有效期不能是过去的日期",
     "en": "Expiry date cannot be in the past"
@@ -234,6 +238,86 @@
   "总价": {
     "zh": "总价",
     "en": "Total Price"
+  },
+  "支付成功": {
+    "zh": "支付成功",
+    "en": "Payment Successful"
+  },
+  "您的支付已成功完成，感谢您的使用！": {
+    "zh": "您的支付已成功完成，感谢您的使用！",
+    "en": "Your payment has been completed successfully. Thank you for using our service!"
+  },
+  "提交成功": {
+    "zh": "提交成功",
+    "en": "Submission Successful"
+  },
+  "您的提交已成功完成，感谢您的使用！": {
+    "zh": "您的提交已成功完成，感谢您的使用！",
+    "en": "Your submission has been completed successfully. Thank you for using our service!"
+  },
+  "安全·智能·创新": {
+    "zh": "安全·智能·创新",
+    "en": "Secure · Intelligent · Innovative"
+  },
+  "改变一点就是新的起点，酒旅一站式解决方案专家！": {
+    "zh": "改变一点就是新的起点，酒旅一站式解决方案专家！",
+    "en": "A small change is a new beginning. Your one-stop solution expert for hospitality and travel!"
+  },
+  "简体中文": {
+    "zh": "简体中文",
+    "en": "Simplified Chinese"
+  },
+  "已支付成功": {
+    "zh": "已支付成功",
+    "en": "Payment Successful"
+  },
+  "您已支付成功": {
+    "zh": "您已支付成功",
+    "en": "You have successfully paid"
+  },
+  "支付尚未完成，请稍后再试": {
+    "zh": "支付尚未完成，请稍后再试",
+    "en": "Payment not completed yet, please try again later"
+  },
+  "获取订单信息失败，请重试": {
+    "zh": "获取订单信息失败，请重试",
+    "en": "Failed to get order information, please try again"
+  },
+  "已完成担保": {
+    "zh": "已完成担保",
+    "en": "Guarantee Completed"
+  },
+  "担保信息尚未生效，请稍后再试": {
+    "zh": "担保信息尚未生效，请稍后再试",
+    "en": "Guarantee information has not taken effect yet, please try again later"
+  },
+  "担保已完成！": {
+    "zh": "担保已完成！",
+    "en": "Guarantee completed!"
+  },
+  "跳转到支付宝支付": {
+    "zh": "跳转到支付宝支付",
+    "en": "Jump to Alipay Payment"
+  },
+  "点击上方按钮跳转到支付宝完成支付": {
+    "zh": "点击上方按钮跳转到支付宝完成支付",
+    "en": "Click the button above to jump to Alipay to complete payment"
+  },
+  "加载支付链接中...": {
+    "zh": "加载支付链接中...",
+    "en": "Loading payment link..."
+  },
+  "支付链接已过期，请重新获取": {
+    "zh": "支付链接已过期，请重新获取",
+    "en": "Payment link has expired, please refresh"
+  },
+  "重新获取支付链接": {
+    "zh": "重新获取支付链接",
+    "en": "Refresh Payment Link"
+  },
+  "支付链接已更新": {
+    "zh": "支付链接已更新",
+    "en": "Payment link has been updated"
   }
 }
 

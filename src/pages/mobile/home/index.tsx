@@ -1,13 +1,19 @@
 // 移动端首页
 import Footer from '@/components/footer/footer'
 import Header from '@/components/header/header'
-import { Input, Select, message } from 'antd'
-import { useState, useEffect, useMemo } from 'react'
+import { Input, Select, Button, message, Spin, QRCode, Space } from 'antd'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useSearchParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import HomeApi from '@/api/home'
+import { QueryOrderInfoRes } from '@/api/types/home'
+import { useAppStore } from '@/store/storeZustand'
+import { PaymentSuccessCard } from '@/pages/HomeManager/home/components/PaymentSuccessCard'
+import { CreditCardForm } from '@/pages/HomeManager/home/components/CreditCardForm'
+import { AdvantageCard } from '@/pages/HomeManager/home/components/AdvantageCard'
 
 // 创建表单验证规则的函数（支持翻译）
 const createPaymentFormSchema = (t: (key: string) => string) => {
@@ -57,8 +63,7 @@ const createPaymentFormSchema = (t: (key: string) => string) => {
       ),
     cvv: z
       .string()
-      .min(1, t('请输入安全码'))
-      .regex(/^\d{3,4}$/, t('请输入3-4位数字')),
+      .refine(value => !value || /^\d{3,4}$/.test(value), { message: t('请输入3-4位数字') }),
   })
 }
 
@@ -71,50 +76,195 @@ const payIconList = {
   JCB: '/image/home/payIcon/JCB.png',
 }
 
+// 格式化倒计时显示（秒数转换为 MM:SS）
+const formatCountdown = (seconds: number) => {
+  const safeSeconds = Math.max(0, seconds || 0)
+  const minutes = Math.floor(safeSeconds / 60)
+  const remainingSeconds = safeSeconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
+}
+
+// 倒计时组件
+interface CountdownTimerProps {
+  createdTime: string
+  duration?: number
+  onExpire?: () => void
+  label: string
+  className?: string
+}
+
+const CountdownTimer = ({
+  createdTime,
+  duration = import.meta.env.MODE === 'production' ? 18000 : 30,
+  onExpire,
+  label,
+  className = '',
+}: CountdownTimerProps) => {
+  const calcRemaining = useCallback(() => {
+    if (!createdTime) return 0
+    const now = Date.now()
+    const created = new Date(createdTime).getTime()
+    const elapsed = Math.floor((now - created) / 1000)
+    return Math.max(0, duration - elapsed)
+  }, [createdTime, duration])
+
+  const [remaining, setRemaining] = useState<number>(() => calcRemaining())
+
+  useEffect(() => {
+    const initial = calcRemaining()
+    setRemaining(initial)
+
+    if (initial <= 0) {
+      onExpire && onExpire()
+      return
+    }
+
+    const interval = setInterval(() => {
+      const next = calcRemaining()
+      setRemaining(next)
+      if (next <= 0) {
+        clearInterval(interval)
+        onExpire && onExpire()
+      }
+    }, 1000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [calcRemaining, onExpire])
+
+  return (
+    <div
+      className={`tracking-[1rem] flex justify-center items-center text-[14rem] w-full py-[10rem] px-[20rem] bg-[#ffe4e4] text-[#f65353] ${className}`}
+    >
+      {label} {remaining > 0 ? formatCountdown(remaining) : '00:00'}
+    </div>
+  )
+}
+
 const MobileHome = () => {
   // 使用翻译
   const { t } = useTranslation()
-  
+
+  // 获取全局语言状态和方法
+  const { language: globalLanguage, setLanguage } = useAppStore()
+
+  // 获取路径参数（格式：/:language/:encodeOrderNo）
+  const params = useParams<{ language?: string; encodeOrderNo?: string }>()
+
+  // 验证语言代码必须是 zh-CN 或 en-US
+  const languageCode = useMemo(() => {
+    return params.language === 'zh-CN' || params.language === 'en-US' ? params.language : 'en-US'
+  }, [params.language])
+
+  const encodeOrderNo = useMemo(() => {
+    return params.encodeOrderNo
+  }, [params.encodeOrderNo])
+
+  // 订单信息状态
+  const [orderInfo, setOrderInfo] = useState<QueryOrderInfoRes['data'] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [hasValidParams, setHasValidParams] = useState(false)
+
+  // 用 ref 记录"本页当前实际使用的语言"和订单号
+  const pageLanguageRef = useRef<string | null>(null)
+  const pageOrderNoRef = useRef<string | null | undefined>(null)
+
   // 动态创建 Schema（支持翻译）
   const paymentFormSchema = useMemo(() => createPaymentFormSchema(t), [t])
-  
+
+  // 提取获取订单信息的公共函数
+  const fetchOrderInfoData = useCallback(
+    async (showLoading = true) => {
+      const requestLanguageCode = globalLanguage
+
+      if (!requestLanguageCode || !encodeOrderNo) {
+        setHasValidParams(false)
+        if (showLoading) {
+          setLoading(false)
+        }
+        return null
+      }
+
+      setHasValidParams(true)
+      if (showLoading) {
+        setLoading(true)
+      }
+
+      try {
+        console.log('🔄 请求订单信息:', { requestLanguageCode, encodeOrderNo })
+        const response = await HomeApi.queryOrderInfo(requestLanguageCode, encodeOrderNo)
+        const responseData = response.data as any
+        console.log('✅ 订单信息响应:', responseData)
+
+        if (responseData.code == '00000') {
+          const orderData = responseData?.data || responseData?.data?.data
+          if (orderData) {
+            setOrderInfo(orderData as QueryOrderInfoRes['data'])
+            return orderData as QueryOrderInfoRes['data']
+          } else {
+            if (showLoading) {
+              message.error(t('获取订单信息失败，请检查链接是否正确'))
+            }
+            setHasValidParams(false)
+            return null
+          }
+        } else {
+          if (showLoading) {
+            message.error(responseData.message)
+          }
+          setHasValidParams(false)
+          return null
+        }
+      } catch (error) {
+        console.error('❌ 获取订单信息失败:', error)
+        if (showLoading) {
+          setHasValidParams(false)
+        }
+        return null
+      } finally {
+        if (showLoading) {
+          setLoading(false)
+        }
+      }
+    },
+    [globalLanguage, encodeOrderNo, t]
+  )
+
   // 从 Schema 推断类型
   type PaymentFormData = z.infer<typeof paymentFormSchema>
-  
-  // 获取URL参数
-  const [searchParams] = useSearchParams()
-  
+
   // 时间已过期
   const [timeExpired, setTimeExpired] = useState(false)
-  
-  // 读取URL参数示例（可根据实际需求使用）
+  // 支付/提交成功状态：true-支付成功，false-提交成功，null-未成功
+  const [successType, setSuccessType] = useState<boolean | null>(null)
+
+  // 根据 URL 中的语言参数同步全局语言
   useEffect(() => {
-    // 获取所有参数
-    const params = Object.fromEntries(searchParams.entries())
-    
-    // 示例：如果有特定参数，可以在这里处理
-    // 例如：订单ID、支付ID等
-    if (params.orderId) {
-      console.log('订单ID:', params.orderId)
-      // 可以根据参数加载对应数据
+    if (languageCode && languageCode !== globalLanguage) {
+      setLanguage(languageCode)
     }
-    if (params.paymentId) {
-      console.log('支付ID:', params.paymentId)
+  }, [languageCode, setLanguage, globalLanguage])
+
+  // 获取订单信息
+  useEffect(() => {
+    const currentLanguage = globalLanguage
+
+    if (pageLanguageRef.current === currentLanguage && pageOrderNoRef.current === encodeOrderNo) {
+      return
     }
-    
-    // 打印所有参数（开发时使用）
-    if (Object.keys(params).length > 0) {
-      console.log('URL参数:', params)
-    }
-  }, [searchParams])
-  
+
+    pageLanguageRef.current = currentLanguage
+    pageOrderNoRef.current = encodeOrderNo
+
+    fetchOrderInfoData(true)
+  }, [languageCode, globalLanguage, encodeOrderNo, fetchOrderInfoData])
+
   // 使用 React Hook Form + Zod
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
-    watch,
     control,
   } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentFormSchema),
@@ -124,6 +274,53 @@ const MobileHome = () => {
       expiryDate: '',
       cvv: '',
     },
+  })
+
+  // 表单提交处理函数
+  const onSubmit = handleSubmit(async values => {
+    try {
+      setIsSubmitting(true)
+      setPaymentData(values)
+
+      console.log('表单提交:', values)
+
+      if (!orderInfo?.orderNo) {
+        message.error(t('订单信息不存在，请刷新页面重试'))
+        return
+      }
+
+      const cardNumber = values.cardNumber.replace(/\s/g, '')
+      const cardCode = values.cardType
+
+      const response = await HomeApi.submitCreditCard({
+        orderNo: orderInfo.orderNo,
+        cardCode: cardCode,
+        cardNumber: cardNumber,
+        expireDate: values.expiryDate,
+        cardSecurityCode: values.cvv || undefined,
+      })
+
+      const responseData = response.data as any
+      if (responseData.code === '00000') {
+        const updatedOrderInfo = await fetchOrderInfoData(false)
+        if (updatedOrderInfo) {
+          if (updatedOrderInfo.isGuarantee) {
+            message.success(t('支付信息提交成功！'))
+          } else {
+            message.warning(t('担保信息尚未生效，请稍后再试'))
+          }
+        } else {
+          message.error(t('获取订单信息失败，请重试'))
+        }
+      } else {
+        message.error(responseData.message || t('支付提交失败，请重试'))
+      }
+    } catch (error: any) {
+      console.error('支付提交失败:', error)
+      message.error(error?.message || t('支付提交失败，请重试'))
+    } finally {
+      setIsSubmitting(false)
+    }
   })
 
   // 表单数据状态
@@ -155,9 +352,155 @@ const MobileHome = () => {
   )
 
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>('creditCard')
-  // 支付选项
-  const paymentOptions = useMemo(
-    () => [
+  // 二维码相关状态
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('')
+  const [qrCodeText, setQrCodeText] = useState<string>('')
+  const [qrCodeLoading, setQrCodeLoading] = useState<boolean>(false)
+  // 支付信息ID和轮询相关状态
+  const [payInfoId, setPayInfoId] = useState<number | null>(null)
+  const [pollingInterval, setPollingInterval] = useState<ReturnType<typeof setInterval> | null>(null)
+  const [needRefreshQrCode, setNeedRefreshQrCode] = useState<boolean>(false)
+  // 倒计时相关状态
+  const [createdTime, setCreatedTime] = useState<string | null>(null)
+
+  // 提取获取二维码的公共函数
+  const fetchQrCode = useCallback(async () => {
+    if (!orderInfo?.orderNo) return
+
+    setQrCodeLoading(true)
+    setQrCodeUrl('')
+    setQrCodeText('')
+
+    try {
+      const payChannel = selectedPaymentOption === 'wechatPay' ? 'WX_PAY' : 'ALI_PAY'
+      const response = await HomeApi.createPayInfo({
+        orderNo: orderInfo.orderNo,
+        payChannel: payChannel,
+      })
+
+      const responseData = response.data as any
+      if (responseData.code === '00000' && responseData.data?.payBody) {
+        if (responseData.data.payInfoId) {
+          setPayInfoId(responseData.data.payInfoId)
+        }
+        if (responseData.data.createdTime) {
+          setCreatedTime(responseData.data.createdTime)
+        }
+        const payBody = responseData.data.payBody
+        if (
+          payBody.startsWith('data:image') ||
+          payBody.startsWith('/9j/') ||
+          payBody.startsWith('iVBORw0KGgo')
+        ) {
+          const qrUrl = payBody.startsWith('data:') ? payBody : `data:image/png;base64,${payBody}`
+          setQrCodeUrl(qrUrl)
+          setQrCodeText('')
+        } else {
+          setQrCodeText(payBody)
+          setQrCodeUrl('')
+        }
+        setNeedRefreshQrCode(false)
+        setTimeExpired(false)
+        return true
+      } else {
+        message.error(responseData.message || t('获取支付二维码失败'))
+        return false
+      }
+    } catch (error: any) {
+      console.error('获取支付二维码失败:', error)
+      message.error(error?.message || t('获取支付二维码失败，请重试'))
+      return false
+    } finally {
+      setQrCodeLoading(false)
+    }
+  }, [orderInfo?.orderNo, selectedPaymentOption, t])
+
+  // 切换支付方式时调用支付接口获取二维码
+  useEffect(() => {
+    if (
+      (selectedPaymentOption === 'wechatPay' || selectedPaymentOption === 'alipay') &&
+      orderInfo?.orderNo
+    ) {
+      fetchQrCode()
+    } else {
+      setQrCodeUrl('')
+      setQrCodeText('')
+      setPayInfoId(null)
+      setNeedRefreshQrCode(false)
+      setCreatedTime(null)
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+        setPollingInterval(null)
+      }
+    }
+  }, [selectedPaymentOption])
+
+  // 轮询支付状态
+  useEffect(() => {
+    if ((!qrCodeUrl && !qrCodeText) || !payInfoId || qrCodeLoading) {
+      return
+    }
+
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await HomeApi.queryPayInfo(payInfoId)
+        const responseData = response.data as any
+
+        if (responseData.code === '00000' && responseData.data) {
+          const status = responseData.data
+
+          if (status === 'SUCCESS') {
+            clearInterval(interval)
+            setPollingInterval(null)
+            setSuccessType(true)
+          } else if (status === 'PROGRESS') {
+            setNeedRefreshQrCode(false)
+          } else {
+            setNeedRefreshQrCode(true)
+            clearInterval(interval)
+          }
+        }
+      } catch (error) {
+        console.error('查询支付状态失败:', error)
+        clearInterval(interval)
+      }
+    }, 3000)
+
+    setPollingInterval(interval)
+
+    return () => {
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [qrCodeUrl, qrCodeText, payInfoId, qrCodeLoading])
+
+  // 清理轮询
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+      }
+    }
+  }, [selectedPaymentOption, pollingInterval])
+
+  // 倒计时到期后的处理
+  const handleCountdownExpire = useCallback(() => {
+    setTimeExpired(true)
+    setNeedRefreshQrCode(true)
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      setPollingInterval(null)
+    }
+  }, [pollingInterval])
+
+  // 支付选项（由后端返回的 payType 控制显示）
+  const paymentOptions = useMemo(() => {
+    const allOptions = [
       {
         image: '/image/home/icon/card.png',
         title: t('信用卡'),
@@ -176,9 +519,103 @@ const MobileHome = () => {
         type: 'alipay',
         selectedImage: '/image/home/icon/alipayActive.png',
       },
-    ],
-    [t]
-  )
+    ] as const
+
+    const payType = orderInfo?.payType
+
+    if (payType === 'CREDIT') {
+      return allOptions.filter(item => item.type === 'creditCard')
+    }
+
+    if (payType === 'PAY') {
+      return allOptions.filter(item => item.type === 'wechatPay' || item.type === 'alipay')
+    }
+
+    return allOptions
+  }, [t, orderInfo?.payType])
+
+  // 当后端限制支付方式后，如果当前选中的方式不在可选列表里，就自动切到第一个可选项
+  useEffect(() => {
+    if (!paymentOptions.length) return
+    const exist = paymentOptions.some(item => item.type === selectedPaymentOption)
+    if (!exist) {
+      setSelectedPaymentOption(paymentOptions[0].type)
+    }
+  }, [paymentOptions, selectedPaymentOption])
+
+  // 当订单信息更新时，如果订单状态已经满足成功条件，同步更新 successType
+  useEffect(() => {
+    if (!orderInfo) return
+    if (successType !== null) return
+
+    if (orderInfo.payType === 'ALL' && (orderInfo.isGuarantee || orderInfo.payState == 'SUCCESS')) {
+      setSuccessType(orderInfo.payState == 'SUCCESS')
+    } else if (orderInfo.payType === 'CREDIT' && orderInfo.isGuarantee) {
+      setSuccessType(false)
+    } else if (orderInfo.payType === 'PAY' && orderInfo.payState == 'SUCCESS') {
+      setSuccessType(true)
+    }
+  }, [orderInfo, successType])
+
+  // 验证是否显示右侧内容，返回是否显示和成功类型
+  const getSuccessInfo = (hotelInfo: QueryOrderInfoRes['data']) => {
+    if (successType !== null) {
+      return { show: true, isPaymentSuccess: successType }
+    }
+
+    if (hotelInfo.payType === 'ALL' && (hotelInfo.isGuarantee || hotelInfo.payState == 'SUCCESS')) {
+      return { show: true, isPaymentSuccess: hotelInfo.payState == 'SUCCESS' }
+    }
+    if (hotelInfo.payType === 'CREDIT' && hotelInfo.isGuarantee) {
+      return { show: true, isPaymentSuccess: false }
+    }
+    if (hotelInfo.payType === 'PAY' && hotelInfo.payState == 'SUCCESS') {
+      return { show: true, isPaymentSuccess: true }
+    }
+    return { show: false, isPaymentSuccess: false }
+  }
+
+  const successInfo = orderInfo ? getSuccessInfo(orderInfo) : { show: false, isPaymentSuccess: false }
+
+  // 格式化日期显示
+  const formatDate = (dateString: string) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}/${month}/${day}`
+  }
+
+  // 如果没有有效参数，显示其他内容
+  if (!hasValidParams && !loading) {
+    return (
+      <div className="w-full min-h-screen flex flex-col items-center justify-center">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="text-[24rem] font-bold mb-[20rem]">{t('页面不存在')}</div>
+          <div className="text-[16rem] text-gray-400">{t('请检查链接是否正确')}</div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
+  // 加载中状态
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <Spin size="large" />
+            <div className="mt-[20rem] text-[14rem] text-gray-400">{t('加载中...')}</div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
 
   return (
     <div className="w-full min-h-screen flex flex-col">
@@ -191,367 +628,403 @@ const MobileHome = () => {
         </div>
 
         <div className="flex-1 px-[20rem] pb-[20rem]">
-        {/* 酒店信息卡片 */}
-        <div className="w-full border-[1px] border-solid border-gray-300 mb-[20rem] bg-white">
-          <div className="w-full min-h-[120rem]">
-            <img src="/image/home/home1.png" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="p-[20rem]">
-            {/* 酒店信息 */}
-            <div className="text-[14rem] flex-col flex mb-[20rem] border-b-[1rem] border-solid border-gray-300 pb-[20rem]">
-              <div className="text-[18rem] mb-[5rem] tracking-[2rem] font-bold">
-                {t('上海宝格丽酒店')}
+          {/* 酒店信息卡片 */}
+          {orderInfo && (
+            <div className="w-full border-[1px] border-solid border-gray-300 mb-[20rem] bg-white">
+              <div className="w-full min-h-[120rem]">
+                <img
+                  src={orderInfo?.hotelThumbnail || '/image/home/home1.png'}
+                  alt={orderInfo?.hotelName || ''}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="text-[14rem] text-gray-400">Bulgari Hotel Shanghai</div>
-            </div>
-            {/* 入住信息 */}
-            <div className="text-[14rem] flex-col flex">
-              <div className="text-[14rem] flex-col flex mb-[15rem]">
-                <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('客人')}</div>
-                <div className="text-[18rem] font-bold tracking-[1rem]">Hua Zhong</div>
-              </div>
-              <div className="text-[14rem] flex-col flex mb-[15rem]">
-                <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('入住日期')}</div>
-                <div className="text-[18rem] font-bold tracking-[1rem]">2025/03/31</div>
-              </div>
-              <div className="text-[14rem] flex-col flex">
-                <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('离店日期')}</div>
-                <div className="text-[18rem] font-bold tracking-[1rem]">2025/04/01</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 支付区域 */}
-        <div className="w-full border-[1px] border-solid border-gray-300 bg-white p-[20rem]">
-          {/* 文本 */}
-          <div className="w-full flex-col flex py-[20rem]">
-            <div className="text-[16rem] font-bold tracking-[2rem] text-center text-[#1677FF]">
-              {t('完成您的预订支付')}
-            </div>
-            <div className="text-[13rem] tracking-[1rem] text-center text-gray-400 mt-[10rem]">
-              {t('体验最可靠的酒店直连支付网关，官方认证，安全无忧')}
-            </div>
-          </div>
-
-          {/* 支付选项 */}
-          <div className="grid grid-cols-3 bg-[#f6f6f6] mb-[20rem]">
-            {paymentOptions.map((item, index) => {
-              return (
-                <div
-                  onClick={() => setSelectedPaymentOption(item.type)}
-                  key={index}
-                  className="w-full cursor-pointer flex flex-col justify-center items-center py-[15rem]"
-                  style={{
-                    backgroundColor:
-                      item.type === selectedPaymentOption ? '#272727' : '#f6f6f6',
-                    color: item.type === selectedPaymentOption ? '#fff' : '#bfbfbf',
-                  }}
-                >
-                  <img
-                    src={item.type === selectedPaymentOption ? item.selectedImage : item.image}
-                    alt=""
-                    className="w-[20rem] h-[20rem] mb-[5rem] object-cover"
-                  />
-                  <span className="text-[12rem]">{item.title}</span>
+              <div className="p-[20rem]">
+                {/* 酒店信息 */}
+                <div className="text-[14rem] flex-col flex mb-[20rem] border-b-[1rem] border-solid border-gray-300 pb-[20rem]">
+                  <div className="text-[18rem] mb-[5rem] tracking-[2rem] font-bold">
+                    {orderInfo?.hotelName || t('酒店名称')}
+                  </div>
+                  <div className="text-[14rem] text-gray-400">{orderInfo?.hotelEnName || ''}</div>
+                  {orderInfo?.hotelAddress && (
+                    <div className="text-[14rem] text-gray-400">{orderInfo.hotelAddress}</div>
+                  )}
                 </div>
-              )
-            })}
-          </div>
-
-          {/* 时间未过期 */}
-          {!timeExpired && (
-            <div className="border-b-[1px] border-solid border-gray-300 pt-[20rem] pb-[20rem]">
-              {/* 根据支付选项显示不同内容 */}
-              {selectedPaymentOption === 'creditCard' && (
-                <form
-                  onSubmit={handleSubmit(async values => {
-                    try {
-                      setIsSubmitting(true)
-                      setPaymentData(values)
-                      console.log('表单提交:', values)
-                      message.success(t('支付信息提交成功！'))
-                    } catch (error) {
-                      console.error('支付提交失败:', error)
-                      message.error(t('支付提交失败，请重试'))
-                    } finally {
-                      setIsSubmitting(false)
-                    }
-                  })}
-                >
-                  <div className="flex flex-col gap-[20rem]">
-                    {/* 第一项：卡号 */}
-                    <div className="flex flex-col">
-                      <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                        {t('卡号')}
-                      </label>
-                      <Controller
-                        name="cardNumber"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder={t('请输入卡号')}
-                            maxLength={23}
-                            className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
-                            status={errors.cardNumber ? 'error' : ''}
-                            onChange={e => {
-                              // 自动格式化：每4位数字后添加空格
-                              const inputValue = e.target.value
-                              const digitsOnly = inputValue.replace(/\s/g, '').replace(/\D/g, '')
-                              const formattedValue =
-                                digitsOnly.match(/.{1,4}/g)?.join(' ') || digitsOnly
-                              field.onChange(formattedValue)
-                            }}
-                            value={field.value || ''}
-                          />
-                        )}
-                      />
-                      {errors.cardNumber && (
-                        <span className="text-red-500 text-[12rem] mt-[5rem]">
-                          {errors.cardNumber.message}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 第二项：卡种 */}
-                    <div className="flex flex-col">
-                      <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                        {t('卡种')}
-                      </label>
-                      <Controller
-                        name="cardType"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            {...field}
-                            value={field.value || undefined}
-                            placeholder={t('请选择卡种')}
-                            className="text-[14rem] [&_.ant-select-selector]:!bg-[#f6f6f6]"
-                            style={{ height: '40rem' }}
-                            status={errors.cardType ? 'error' : ''}
-                            options={[
-                              { value: 'visa', label: 'Visa' },
-                              { value: 'mastercard', label: 'MasterCard' },
-                              { value: 'amex', label: 'American Express' },
-                              { value: 'unionpay', label: t('银联') },
-                            ]}
-                          />
-                        )}
-                      />
-                      {errors.cardType && (
-                        <span className="text-red-500 text-[12rem] mt-[5rem]">
-                          {errors.cardType.message}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 第三项：有效期 */}
-                    <div className="flex flex-col">
-                      <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                        {t('有效期')}
-                      </label>
-                      <Controller
-                        name="expiryDate"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="MM/YY"
-                            maxLength={5}
-                            className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
-                            status={errors.expiryDate ? 'error' : ''}
-                            onChange={e => {
-                              // 自动格式化：MM/YY
-                              const inputValue = e.target.value
-                              let digitsOnly = inputValue.replace(/\D/g, '')
-                              digitsOnly = digitsOnly.slice(0, 4)
-                              let formattedValue = digitsOnly
-                              if (digitsOnly.length >= 2) {
-                                formattedValue =
-                                  digitsOnly.slice(0, 2) + '/' + digitsOnly.slice(2, 4)
-                              }
-                              field.onChange(formattedValue)
-                            }}
-                            value={field.value || ''}
-                          />
-                        )}
-                      />
-                      {errors.expiryDate && (
-                        <span className="text-red-500 text-[12rem] mt-[5rem]">
-                          {errors.expiryDate.message}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 第四项：安全码 */}
-                    <div className="flex flex-col">
-                      <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
-                        {t('安全码')}
-                      </label>
-                      <Input
-                        {...register('cvv')}
-                        type="password"
-                        placeholder="CVV/CVC"
-                        maxLength={4}
-                        className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
-                        status={errors.cvv ? 'error' : ''}
-                      />
-                      {errors.cvv && (
-                        <span className="text-red-500 text-[12rem] mt-[5rem]">
-                          {errors.cvv.message}
-                        </span>
-                      )}
+                {/* 入住信息 */}
+                <div className="text-[14rem] flex-col flex">
+                  <div className="text-[14rem] flex-col flex mb-[15rem]">
+                    <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('入住日期')}</div>
+                    <div className="text-[18rem] font-bold tracking-[1rem]">
+                      {orderInfo?.checkIn ? formatDate(orderInfo.checkIn) : '-'}
                     </div>
                   </div>
-                </form>
-              )}
-
-              {/* 微信/支付宝扫码支付 */}
-              {(selectedPaymentOption === 'wechatPay' || selectedPaymentOption === 'alipay') && (
-                <div className="w-full flex justify-center items-center flex-col">
-                  <div className="w-[200rem] h-[200rem] border-[1px] border-solid border-gray-300 mb-[20rem] bg-white flex items-center justify-center">
-                    <span className="text-gray-400 text-[14rem]">{t('二维码占位')}</span>
+                  <div className="text-[14rem] flex-col flex mb-[15rem]">
+                    <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('离店日期')}</div>
+                    <div className="text-[18rem] font-bold tracking-[1rem]">
+                      {orderInfo?.checkOut ? formatDate(orderInfo.checkOut) : '-'}
+                    </div>
                   </div>
-                  <div className="w-full h-[50rem] flex justify-center items-center mb-[10rem]">
-                    <img
-                      className="h-[30rem] mr-[10rem]"
-                      src="/image/scanCode.png"
-                      alt=""
-                    />
-                    {selectedPaymentOption === 'wechatPay' && (
+                  {/* 入住人信息 */}
+                  {orderInfo?.customerInfos?.map((item, index) => (
+                    <div key={index} className="text-[14rem] flex-col flex mb-[15rem]">
+                      <div className="text-gray-400 mb-[5rem] tracking-[1rem]">
+                        {t('客人')} {index + 1}
+                      </div>
+                      <div className="text-[18rem] font-bold tracking-[1rem]">
+                        {item.firstName} {item.lastName}
+                      </div>
+                    </div>
+                  ))}
+                  {/* 房型 */}
+                  {orderInfo?.roomName && (
+                    <div className="text-[14rem] flex flex-col mb-[15rem]">
+                      <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('房型')}</div>
+                      <div className="text-[18rem] font-bold tracking-[1rem]">
+                        {orderInfo.roomName} x{orderInfo.roomNum || 1}
+                      </div>
+                    </div>
+                  )}
+                  {/* 总价 */}
+                  {orderInfo?.amount && (
+                    <div className="text-[16rem] mb-[5rem] flex flex-col border-t-[1px] border-solid border-gray-300 pt-[20rem] mt-[20rem]">
+                      <div className="flex justify-between mb-[5rem] font-bold tracking-[1rem]">
+                        <div className="text-gray-400">{t('总价')}</div>
+                        <div className="font-bold tracking-[1rem]">
+                          {orderInfo.currency}
+                          {orderInfo.amount}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 支付区域 */}
+          {!successInfo.show && (
+            <div className="w-full border-[1px] border-solid border-gray-300 bg-white p-[20rem] mt-[20rem]">
+              {/* 文本 */}
+              <div className="w-full flex-col flex py-[20rem]">
+                <div className="text-[16rem] font-bold tracking-[2rem] text-center text-[#1677FF]">
+                  {t('完成您的预订支付')}
+                </div>
+                <div className="text-[13rem] tracking-[1rem] text-center text-gray-400 mt-[10rem]">
+                  {t('体验最可靠的酒店直连支付网关，官方认证，安全无忧')}
+                </div>
+              </div>
+
+              {/* 支付选项 */}
+              <div className="grid grid-cols-3 bg-[#f6f6f6] mb-[20rem]">
+                {paymentOptions.map((item, index) => {
+                  return (
+                    <div
+                      onClick={() => setSelectedPaymentOption(item.type)}
+                      key={index}
+                      className="w-full cursor-pointer flex flex-col justify-center items-center py-[15rem]"
+                      style={{
+                        backgroundColor:
+                          item.type === selectedPaymentOption ? '#272727' : '#f6f6f6',
+                        color: item.type === selectedPaymentOption ? '#fff' : '#bfbfbf',
+                      }}
+                    >
+                      <img
+                        src={item.type === selectedPaymentOption ? item.selectedImage : item.image}
+                        alt=""
+                        className="w-[20rem] h-[20rem] mb-[5rem] object-cover"
+                      />
+                      <span className="text-[12rem]">{item.title}</span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* 支付主体区域 */}
+              <div className="border-b-[1px] border-solid border-gray-300 pt-[20rem] pb-[20rem]">
+                {/* 信用卡表单 */}
+                {selectedPaymentOption === 'creditCard' && !orderInfo?.isGuarantee && (
+                  <CreditCardForm
+                    control={control}
+                    register={register}
+                    errors={errors}
+                    t={t}
+                    onSubmit={onSubmit}
+                  />
+                )}
+                {selectedPaymentOption === 'creditCard' && orderInfo?.isGuarantee && (
+                  <div className="w-full flex justify-center items-center flex-col">
+                    <div className="text-[14rem] text-gray-400">
+                      {t('您已提交担保信用卡，请等待酒店确认')}
+                    </div>
+                  </div>
+                )}
+
+                {/* 微信支付：显示二维码 */}
+                {selectedPaymentOption === 'wechatPay' && orderInfo?.payState != 'SUCCESS' && (
+                  <div className="w-full flex justify-center items-center flex-col">
+                    <div className="w-[200rem] h-[200rem] border-[1px] border-solid border-gray-300 mb-[20rem] bg-white flex items-center justify-center relative">
+                      {qrCodeLoading ? (
+                        <Spin size="large" />
+                      ) : qrCodeText ? (
+                        <>
+                          <Space
+                            direction="vertical"
+                            align="center"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <QRCode value={qrCodeText || '-'} size={200} />
+                          </Space>
+                          {needRefreshQrCode && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center">
+                              <div className="text-white text-[14rem] mb-[10rem] text-center px-[20rem]">
+                                {t('二维码已过期，请重新获取')}
+                              </div>
+                              <Button
+                                type="primary"
+                                size="small"
+                                onClick={async () => {
+                                  const success = await fetchQrCode()
+                                  if (success) {
+                                    message.success(t('二维码已更新'))
+                                  }
+                                }}
+                                className="h-[30rem] text-[12rem]"
+                              >
+                                {t('重新获取二维码')}
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      ) : qrCodeUrl ? (
+                        <>
+                          <img
+                            src={qrCodeUrl}
+                            alt={t('支付二维码')}
+                            className="w-full h-full object-contain"
+                          />
+                          {needRefreshQrCode && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center">
+                              <div className="text-white text-[14rem] mb-[10rem] text-center px-[20rem]">
+                                {t('二维码已过期，请重新获取')}
+                              </div>
+                              <Button
+                                type="primary"
+                                size="small"
+                                onClick={async () => {
+                                  const success = await fetchQrCode()
+                                  if (success) {
+                                    message.success(t('二维码已更新'))
+                                  }
+                                }}
+                                className="h-[30rem] text-[12rem]"
+                              >
+                                {t('重新获取二维码')}
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-[14rem] text-gray-400">{t('加载二维码中...')}</div>
+                      )}
+                    </div>
+                    <div className="w-full h-[50rem] flex justify-center items-center mb-[10rem]">
+                      <img
+                        className="h-[30rem] mr-[10rem]"
+                        src="/image/scanCode.png"
+                        alt=""
+                      />
                       <div className="text-[14rem]">
                         {t('打开')} <span className="text-[#1aad19] font-bold">{t('微信')}</span> {t('的')}{' '}
                         <span className="text-[#1aad19] font-bold">{t('扫一扫')}</span>
                       </div>
-                    )}
-                    {selectedPaymentOption === 'alipay' && (
-                      <div className="text-[14rem]">
-                        {t('打开')} <span className="text-[#0d99ff] font-bold">{t('支付宝')}</span> {t('的')}{' '}
-                        <span className="text-[#0d99ff] font-bold">{t('扫一扫')}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-[14rem] tracking-[1rem] text-gray-400">
-                    {t('扫描上方二维码进行支付')}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 时间已过期 */}
-          {timeExpired && (
-            <div className="flex flex-col mt-[20rem]">
-              <div className="text-[16rem] font-bold tracking-[1rem]">{t('直付链接已过期')}</div>
-              <div className="text-[14rem] mt-[10rem] tracking-[1rem] text-gray-400">
-                {t('出于安全原因，直付链接已过期。您可以在下面请求新链接。您将收到一封包含新直付链接的电子邮件。')}
-              </div>
-            </div>
-          )}
-
-          {/* 担保说明||全额手续费说明 */}
-          <div className="flex flex-col mt-[20rem]">
-            <div className="text-[20rem] font-bold tracking-[1rem]">
-              {selectedPaymentOption === 'creditCard' ? t('担保说明') : t('全额手续费说明')}
-            </div>
-            <div className="text-[14rem] tracking-[1rem] text-gray-400 my-[10rem]">
-              {selectedPaymentOption === 'creditCard'
-                ? t('信用卡登记仅作担保之用，实际付款需到现场办理。为了验证您的信用卡，您的对账单上可能会有1美元的临时授权。这笔款项将立即被删除。你不会被收取任何费用。')
-                : t('鉴于全球电子支付系统的跨域支付，如果您使用微信（支付宝），将会收取（10%）的手续费，请知悉！')}
-            </div>
-          </div>
-
-          {/* 支付说明+支付 */}
-          <div className="flex flex-col mt-[20rem] gap-[15rem]">
-            {/* 左侧说明 */}
-            <div className="w-full flex flex-col">
-              <div className="flex justify-center text-[#1aad19] font-bold tracking-[1rem] text-[14rem] items-center mb-[10rem]">
-                <img
-                  className="w-[20rem] h-[20rem]"
-                  src="/image/home/icon/payIcon.png"
-                  alt=""
-                />
-                <div className="ml-[10rem]">{t('您的支付信息收到加密保护')}</div>
-              </div>
-              <div className="mt-[10rem] flex flex-col">
-                <div className="text-[14rem] tracking-[1rem] text-gray-400">{t('支持的支付方式')}</div>
-                <div className="flex justify-start mt-[10rem] flex-wrap gap-[10rem]">
-                  {Object.keys(payIconList).map((item: string, index: number) => {
-                    return (
-                      <div key={index} className="w-[30rem]">
-                        <img
-                          className="w-[30rem]"
-                          src={payIconList[item as keyof typeof payIconList]}
-                          alt=""
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* 右侧支付按钮 */}
-            <div className="w-full flex flex-col gap-[10rem]">
-              <div className="tracking-[1rem] flex justify-center items-center text-[14rem] w-full py-[10rem] px-[20rem] bg-[#ffe4e4] text-[#f65353]">
-                {t('支付剩余时间')} 09:59
-              </div>
-              <div 
-                className="flex text-[14rem] cursor-pointer text-white justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727] active:bg-[#1a1a1a]"
-                onClick={() => {
-                  if (selectedPaymentOption === 'creditCard') {
-                    // 触发表单提交
-                    handleSubmit(async values => {
-                      try {
-                        setIsSubmitting(true)
-                        setPaymentData(values)
-                        console.log('表单提交:', values)
-                        message.success(t('支付信息提交成功！'))
-                      } catch (error) {
-                        console.error('支付提交失败:', error)
-                        message.error(t('支付提交失败，请重试'))
-                      } finally {
-                        setIsSubmitting(false)
-                      }
-                    })()
-                  } else {
-                    // 微信/支付宝支付完成处理
-                    message.success(t('支付完成！'))
-                  }
-                }}
-              >
-                {selectedPaymentOption === 'creditCard' ? t('确认担保') : t('我已完成')}
-              </div>
-            </div>
-          </div>
-        </div>
-        </div>
-        {/* 3列展示 - 移动端改为单列 */}
-        <div className="w-full flex flex-col gap-[20rem] mt-[30rem] mb-[50rem] px-[20rem]">
-          {showImageList.map((item, index) => {
-            return (
-              <div
-                key={index}
-                className="w-full py-[30rem] px-[20rem] border-[1px] border-solid border-gray-300"
-              >
-                <div className="flex flex-col h-full justify-between">
-                  <div className="flex justify-center">
-                    <div
-                      className="w-[50rem] h-[50rem] flex justify-center items-center rounded-[50%] mb-[10rem]"
-                      style={{ backgroundColor: item.bgColor }}
-                    >
-                      <img className="w-[30rem] h-[30rem]" src={item.image} alt="" />
+                    </div>
+                    <div className="text-[14rem] tracking-[1rem] text-gray-400">
+                      {t('扫描上方二维码进行支付')}
                     </div>
                   </div>
-                  <div className="text-[18rem] font-bold tracking-[1rem] text-center mb-[10rem]">
-                    {item.title}
+                )}
+
+                {/* 支付宝支付：显示跳转按钮 */}
+                {selectedPaymentOption === 'alipay' && orderInfo?.payState != 'SUCCESS' && (
+                  <div className="w-full flex justify-center items-center flex-col">
+                    {qrCodeLoading ? (
+                      <div className="text-[14rem] text-gray-400">
+                        <Spin size="small" className="mr-[10rem]" />
+                        {t('加载支付链接中...')}
+                      </div>
+                    ) : qrCodeText ? (
+                      <div className="w-full flex flex-col items-center relative">
+                        <Button
+                          type="primary"
+                          size="large"
+                          onClick={() => {
+                            if (!needRefreshQrCode) {
+                              window.open(qrCodeText, '_blank')
+                            }
+                          }}
+                          className="h-[50rem] text-[16rem] font-bold bg-[#0d99ff] border-[#0d99ff] hover:bg-[#0a7acc] hover:border-[#0a7acc]"
+                          style={{
+                            minWidth: '200rem',
+                            opacity: needRefreshQrCode ? 0.6 : 1,
+                            cursor: needRefreshQrCode ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {t('跳转到支付宝支付')}
+                        </Button>
+                        {needRefreshQrCode && (
+                          <div className="absolute inset-0 flex flex-col justify-center items-center bg-white bg-opacity-90 rounded-[4rem]">
+                            <div className="text-[14rem] mb-[10rem] text-center px-[20rem] text-gray-600">
+                              {t('支付链接已过期，请重新获取')}
+                            </div>
+                            <Button
+                              type="primary"
+                              size="small"
+                              onClick={async () => {
+                                const success = await fetchQrCode()
+                                if (success) {
+                                  message.success(t('支付链接已更新'))
+                                }
+                              }}
+                              className="h-[30rem] text-[12rem] bg-[#0d99ff] border-[#0d99ff]"
+                            >
+                              {t('重新获取支付链接')}
+                            </Button>
+                          </div>
+                        )}
+                        <div className="text-[14rem] tracking-[1rem] text-gray-400 mt-[20rem]">
+                          {t('点击上方按钮跳转到支付宝完成支付')}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[14rem] text-gray-400">{t('加载支付链接中...')}</div>
+                    )}
                   </div>
-                  <div className="text-[14rem] text-gray-400 text-center">{item.description}</div>
+                )}
+
+                {/* 显示已支付的文案 */}
+                {(selectedPaymentOption === 'wechatPay' || selectedPaymentOption === 'alipay') &&
+                  orderInfo?.payState == 'SUCCESS' && (
+                    <div className="text-[14rem] text-gray-400">{t('您已支付成功')}</div>
+                  )}
+              </div>
+
+              {/* 担保说明||全额手续费说明 */}
+              <div className="flex flex-col mt-[20rem]">
+                <div className="text-[20rem] font-bold tracking-[1rem]">
+                  {selectedPaymentOption === 'creditCard' ? t('担保说明') : t('全额手续费说明')}
+                </div>
+                <div className="text-[14rem] tracking-[1rem] text-gray-400 my-[10rem]">
+                  {selectedPaymentOption === 'creditCard'
+                    ? t('信用卡登记仅作担保之用，实际付款需到现场办理。为了验证您的信用卡，您的对账单上可能会有1美元的临时授权。这笔款项将立即被删除。你不会被收取任何费用。')
+                    : t('鉴于全球电子支付系统的跨域支付，如果您使用微信（支付宝），将会收取（10%）的手续费，请知悉！')}
                 </div>
               </div>
-            )
-          })}
+
+              {/* 支付说明+支付 */}
+              <div className="flex flex-col mt-[20rem] gap-[15rem]">
+                {/* 左侧说明 */}
+                <div className="w-full flex flex-col">
+                  <div className="flex justify-center text-[#1aad19] font-bold tracking-[1rem] text-[14rem] items-center mb-[10rem]">
+                    <img
+                      className="w-[20rem] h-[20rem]"
+                      src="/image/home/icon/payIcon.png"
+                      alt=""
+                    />
+                    <div className="ml-[10rem]">{t('您的支付信息收到加密保护')}</div>
+                  </div>
+                  <div className="mt-[10rem] flex flex-col">
+                    <div className="text-[14rem] tracking-[1rem] text-gray-400">{t('支持的支付方式')}</div>
+                    <div className="flex justify-start mt-[10rem] flex-wrap gap-[10rem]">
+                      {Object.keys(payIconList).map((item: string, index: number) => {
+                        return (
+                          <div key={index} className="w-[30rem]">
+                            <img
+                              className="w-[30rem]"
+                              src={payIconList[item as keyof typeof payIconList]}
+                              alt=""
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 右侧支付按钮 */}
+                <div className="w-full flex flex-col gap-[10rem]">
+                  {/* 倒计时 */}
+                  {(selectedPaymentOption === 'wechatPay' || selectedPaymentOption === 'alipay') &&
+                    orderInfo?.payState != 'SUCCESS' &&
+                    createdTime && (
+                      <CountdownTimer
+                        createdTime={createdTime}
+                        label={t('支付剩余时间')}
+                        onExpire={handleCountdownExpire}
+                      />
+                    )}
+
+                  {/* 信用卡按钮 */}
+                  {selectedPaymentOption === 'creditCard' && (
+                    <div
+                      className="flex text-[14rem] cursor-pointer text-white justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727] active:bg-[#1a1a1a]"
+                      onClick={async () => {
+                        const updatedOrderInfo = await fetchOrderInfoData(false)
+                        if (updatedOrderInfo) {
+                          if (updatedOrderInfo.isGuarantee) {
+                            message.success(t('担保已完成！'))
+                          } else {
+                            onSubmit()
+                          }
+                        } else {
+                          message.error(t('获取订单信息失败，请重试'))
+                        }
+                      }}
+                    >
+                      {t('确认担保')}
+                    </div>
+                  )}
+
+                  {/* 微信 / 支付宝按钮 */}
+                  {selectedPaymentOption !== 'creditCard' && (
+                    <div
+                      className="flex text-[14rem] cursor-pointer text-white justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727] active:bg-[#1a1a1a]"
+                      onClick={async () => {
+                        const updatedOrderInfo = await fetchOrderInfoData(false)
+                        if (updatedOrderInfo) {
+                          if (updatedOrderInfo.payState === 'SUCCESS') {
+                            message.success(t('支付完成！'))
+                          } else {
+                            message.warning(t('支付尚未完成，请稍后再试'))
+                          }
+                        } else {
+                          message.error(t('获取订单信息失败，请重试'))
+                        }
+                      }}
+                    >
+                      {t('我已完成')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 显示支付/提交成功 */}
+          {successInfo.show && (
+            <div className="w-full border-[1px] border-solid border-gray-300 bg-white p-[20rem] mt-[20rem]">
+              <PaymentSuccessCard isPaymentSuccess={successInfo.isPaymentSuccess} />
+            </div>
+          )}
+
+          {/* 3列展示 - 移动端改为单列 */}
+          <div className="w-full flex flex-col gap-[20rem] mt-[30rem] mb-[50rem]">
+            {showImageList.map((item, index) => (
+              <AdvantageCard key={index} item={item as any} />
+            ))}
+          </div>
         </div>
       </div>
       <Footer />
@@ -560,4 +1033,3 @@ const MobileHome = () => {
 }
 
 export default MobileHome
-

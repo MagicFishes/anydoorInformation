@@ -1,9 +1,12 @@
 import { Select, Space } from 'antd'
 import { useAppStore } from '@/store/storeZustand'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 export default function Header() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { t } = useTranslation()
   // 🎯 Zustand：超级简洁！直接解构使用
   const { isMobile, language: currentLanguage, setLanguage } = useAppStore()
 
@@ -13,6 +16,17 @@ export default function Header() {
     // 🎯 直接调用方法，无需 dispatch！
     setLanguage(language)
     console.log(`语言已切换为: ${language}`)
+
+    // 同时替换当前 URL 中的语言段（例如 /zh-CN/xxx → /en-US/xxx），保持后面的参数不变
+    const { pathname, search, hash } = location
+    const segments = pathname.split('/')
+
+    // segments[0] 为空字符串，segments[1] 才是第一个路径段
+    if (segments[1] === 'zh-CN' || segments[1] === 'en-US') {
+      segments[1] = language
+      const newPath = segments.join('/') + search + hash
+      navigate(newPath, { replace: true })
+    }
   }
 
   // 将 Zustand store 中的语言状态转换为 Select 需要的格式
@@ -42,9 +56,11 @@ export default function Header() {
               <div className="text-[20rem] mx-[10rem]  text-gray-500 ">/</div>
               <div className="flex flex-col ">
                 {/* 字体需要斜体 - 使用 transform skewX 实现中文斜体效果 */}
-                <div className="text-[16rem] font-bold" style={{ transform: 'skewX(-12deg)' }}>安全·智能·创新</div>
+                <div className="text-[16rem] font-bold" style={{ transform: 'skewX(-12deg)' }}>
+                  {t('安全·智能·创新')}
+                </div>
                 <div className="text-[14rem] text-gray-400" style={{ transform: 'skewX(-10deg)' }}>
-                  改变一点就是新的起点，酒旅一站式解决方案专家！
+                  {t('改变一点就是新的起点，酒旅一站式解决方案专家！')}
                 </div>
               </div>
             </>

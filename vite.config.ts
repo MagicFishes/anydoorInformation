@@ -76,6 +76,7 @@ export default defineConfig(({ mode }) => {
     // 服务器配置
     server: {
       // port: 5173,
+      host: true, // 允许局域网访问，会显示 192.168.x.x 地址
       open: true,
       cors: true,
     }

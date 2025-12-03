@@ -9,7 +9,8 @@ import NotFound from '@/pages/NotFound/NotFound'
 import RedirectWithParams from './RedirectWithParams'
 import PrivacyPolicy from '@/pages/CommonPage/privacyPolicy/index'
 import TermsService from '@/pages/CommonPage/termsService/index'
-import PaymentSuccess from '@/pages/CommonPage/paymentSuccess/index'
+import HomeManager from '@/pages/HomeManager/home/index'
+import MobileHome from '@/pages/mobile/home'
 // 独立页面
 // const Login = lazy(() => import('@/pages/Login/Login'))
 const CommonPageList:RouteObject[]=[
@@ -21,10 +22,6 @@ const CommonPageList:RouteObject[]=[
     path: 'terms-service',
     element: <TermsService />,
   },
-  {
-    path: 'payment-success',
-    element: <PaymentSuccess />,
-  },
 ]
 /**
  * 根据设备类型生成不同的路由配置
@@ -34,6 +31,17 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
   if (isMobile) {
     // 移动端路由配置
     return [
+      // 支持新的路径格式：/:language/:encodeOrderNo
+      {
+        path: '/:language/:encodeOrderNo',
+        element: <MobileLayout />,
+        children: [
+          {
+            path: '',
+            element: <MobileHome />,
+          },
+        ],
+      },
       // 移动端主路由（无前缀，与PC端一致）
       {
         path: '/',
@@ -73,6 +81,17 @@ export const generateRoutes = (isMobile: boolean): RouteObject[] => {
   } else {
     // PC端路由配置
     return [
+      // 支持新的路径格式：/:language/:encodeOrderNo
+      {
+        path: '/:language/:encodeOrderNo',
+        element: <BasicLayout />,
+        children: [
+          {
+            path: '',
+            element: <HomeManager />,
+          },
+        ],
+      },
       // 网站端路由（无侧边栏）
       {
         path: '/',

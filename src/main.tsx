@@ -9,7 +9,7 @@ import './utils/rem'
 // 引入 i18n
 import './i18n'
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <App />
-  </React.StrictMode>
+  // {/* </React.StrictMode> */}
 )

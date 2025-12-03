@@ -46,6 +46,17 @@ export default function App() {
     // 获取当前路径
     const currentPath = window.location.pathname
     
+    // 检查是否是支付页面路径格式：/:language/:encodeOrderNo
+    // 例如：/en-US/MTc4NjMxNTYxOTI4MTQyODQ4MQ
+    const paymentPagePattern = /^\/(zh-CN|en-US)\/[^/]+$/
+    const isPaymentPage = paymentPagePattern.test(currentPath)
+    
+    // 如果是支付页面，切换设备时保留URL参数
+    if (isPaymentPage) {
+      // 支付页面切换设备时不需要重定向，路由会自动处理
+      return
+    }
+    
     // 如果从 PC 切换到移动端，重定向到根路径（排除 /login 等公共路径）
     if (isMobile && !currentPath.startsWith('/login') && currentPath !== '/') {
       window.location.href = '/'
