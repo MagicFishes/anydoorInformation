@@ -91,6 +91,10 @@
     "zh": "请输入安全码",
     "en": "Please enter security code"
   },
+  "请输入3位安全码": {
+    "zh": "请输入3位安全码",
+    "en": "Please enter the 3-digit security code"
+  },
   "请输入3-4位数字": {
     "zh": "请输入3-4位数字",
     "en": "Please enter 3-4 digits"

@@ -64,7 +64,8 @@ const createPaymentFormSchema = (t: (key: string) => string) => {
       ),
     cvv: z
       .string()
-      .refine(value => !value || /^\d{3,4}$/.test(value), { message: t('请输入3-4位数字') }),
+      .trim()
+      .regex(/^\d{3}$/, t('请输入3位安全码'))
   })
 }
 // 支付方式图标
@@ -241,6 +242,8 @@ export default function Home() {
 
   // 时间已过期
   const [timeExpired, setTimeExpired] = useState(false)
+  // 使用 ref 保存倒计时到期状态，以便在轮询闭包中访问
+  const timeExpiredRef = useRef(false)
   // 支付/提交成功状态：true-支付成功，false-提交成功，null-未成功
   const [successType, setSuccessType] = useState<boolean | null>(null)
 
@@ -384,6 +387,8 @@ export default function Home() {
   const [needRefreshQrCode, setNeedRefreshQrCode] = useState<boolean>(false)
   // 倒计时相关状态（仅保存创建时间，具体倒计时在子组件中处理）
   const [createdTime, setCreatedTime] = useState<string | null>(null)
+  // 轮询开始时间，用于计算轮询是否超时
+  const [pollingStartTime, setPollingStartTime] = useState<number | null>(null)
 
   // 提取获取二维码的公共函数
   const fetchQrCode = useCallback(async () => {
@@ -431,6 +436,7 @@ export default function Home() {
         setNeedRefreshQrCode(false)
         // 重置超时状态
         setTimeExpired(false)
+        timeExpiredRef.current = false
         return true
       } else {
         message.error(responseData.message || t('获取支付二维码失败'))
@@ -460,6 +466,9 @@ export default function Home() {
       setPayInfoId(null)
       setNeedRefreshQrCode(false)
       setCreatedTime(null)
+      setPollingStartTime(null)
+      setTimeExpired(false)
+      timeExpiredRef.current = false
       if (pollingInterval) {
         clearInterval(pollingInterval)
         setPollingInterval(null)
@@ -471,7 +480,18 @@ export default function Home() {
     // orderInfo?.orderNo, pollingInterval
   }, [selectedPaymentOption])
 
-  // 轮询支付状态 - 暂时禁用自动轮询
+  // 计算倒计时时长（秒）
+  const countdownDuration = useMemo(() => {
+    return import.meta.env.MODE === 'production' ? 18000 : 30
+  }, [])
+
+  // 计算轮询时长（秒）：线下环境比倒计时长10秒，线上环境长5分钟
+  const pollingDuration = useMemo(() => {
+    const extraTime = import.meta.env.MODE === 'production' ? 300 : 10 // 生产环境5分钟(300秒)，开发环境10秒
+    return countdownDuration + extraTime
+  }, [countdownDuration])
+
+  // 轮询支付状态
   useEffect(() => {
     // 只有在二维码显示成功（有链接或图片）且有 payInfoId 时才开始轮询
     if ((!qrCodeUrl && !qrCodeText) || !payInfoId || qrCodeLoading) {
@@ -483,9 +503,23 @@ export default function Home() {
       clearInterval(pollingInterval)
     }
 
+    // 记录轮询开始时间
+    const startTime = Date.now()
+    setPollingStartTime(startTime)
+
     // 开始轮询，每隔3秒查询一次
     const interval = setInterval(async () => {
       try {
+        // 检查轮询是否超过时长
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        if (elapsed >= pollingDuration) {
+          // 轮询时长已到，停止轮询
+          clearInterval(interval)
+          setPollingInterval(null)
+          setPollingStartTime(null)
+          return
+        }
+
         const response = await HomeApi.queryPayInfo(payInfoId)
         const responseData = response.data as any
 
@@ -496,19 +530,27 @@ export default function Home() {
             // 支付成功，停止轮询并设置状态，不跳转
             clearInterval(interval)
             setPollingInterval(null)
+            setPollingStartTime(null)
             setSuccessType(true)
           } else if (status === 'PROGRESS') {
-            // 支付进行中，显示重新获取二维码的样式
-            setNeedRefreshQrCode(false)
+            // 支付进行中，只有在倒计时未到期时才取消重新获取二维码的状态
+            // 如果倒计时已到期，保持需要重新获取二维码的状态
+            if (!timeExpiredRef.current) {
+              setNeedRefreshQrCode(false)
+            }
           } else {
             setNeedRefreshQrCode(true)
             clearInterval(interval)
+            setPollingInterval(null)
+            setPollingStartTime(null)
           }
         }
       } catch (error) {
         console.error('查询支付状态失败:', error)
         // 终止轮询
         clearInterval(interval)
+        setPollingInterval(null)
+        setPollingStartTime(null)
       }
     }, 3000) // 每3秒轮询一次
 
@@ -519,8 +561,9 @@ export default function Home() {
       if (interval) {
         clearInterval(interval)
       }
+      setPollingStartTime(null)
     }
-  }, [qrCodeUrl, qrCodeText, payInfoId, qrCodeLoading, navigate])
+  }, [qrCodeUrl, qrCodeText, payInfoId, qrCodeLoading, navigate, pollingDuration])
 
   // 清理轮询：当切换支付方式或组件卸载时
   useEffect(() => {
@@ -531,15 +574,18 @@ export default function Home() {
     }
   }, [selectedPaymentOption])
 
-  // 倒计时到期后的处理：标记超时、展示重新获取二维码、停止轮询
+  // 同步 timeExpired 状态到 ref
+  useEffect(() => {
+    timeExpiredRef.current = timeExpired
+  }, [timeExpired])
+
+  // 倒计时到期后的处理：只标记超时、展示重新获取二维码，不停止轮询
   const handleCountdownExpire = useCallback(() => {
     setTimeExpired(true)
+    timeExpiredRef.current = true
     setNeedRefreshQrCode(true)
-    if (pollingInterval) {
-      clearInterval(pollingInterval)
-      setPollingInterval(null)
-    }
-  }, [pollingInterval])
+    // 不再停止轮询，让轮询继续运行直到轮询时长到期
+  }, [])
 
   // 支付选项（由后端返回的 payType 控制显示：ALL-三种都有，CREDIT-只有信用卡，PAY-只有微信/支付宝）
   const paymentOptions = useMemo(() => {
@@ -907,7 +953,7 @@ export default function Home() {
                   {/* 时间已过期文案（暂时隐藏，仅保留代码方便以后开启） */}
                   {false && timeExpired && (
                     <div className="  flex flex-col mt-[20rem] ">
-                      <div className="text-[16rem] font-bold tracking-[1rem]  font-bold">
+                      <div className="text-[16rem] font-bold tracking-[1rem]  ">
                         {t('直付链接已过期')}
                       </div>
                       <div className="text-[14rem] mt-[10rem] tracking-[1rem] text-gray-400">
@@ -971,6 +1017,7 @@ export default function Home() {
                         createdTime && (
                           <CountdownTimer
                             createdTime={createdTime}
+                            duration={countdownDuration}
                             label={t('支付剩余时间')}
                             onExpire={handleCountdownExpire}
                           />

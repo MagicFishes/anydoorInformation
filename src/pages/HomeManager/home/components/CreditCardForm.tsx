@@ -79,8 +79,6 @@ export const CreditCardForm = ({
                 options={[
                   { value: 'VISA', label: 'Visa' },
                   { value: 'MASTER', label: 'MasterCard' },
-                  { value: 'AMEX', label: 'American Express' },
-                  { value: 'UNIONPAY', label: t('银联') },
                 ]}
               />
             )}
@@ -138,14 +136,26 @@ export const CreditCardForm = ({
           <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">
             {t('安全码')}
           </label>
-          <Input
-            {...register('cvv')}
-            type="password"
-            placeholder="CVV/CVC"
-            maxLength={4}
-            autoComplete="cc-csc"
-            className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
-            status={errors.cvv ? 'error' : ''}
+          <Controller
+            name="cvv"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                type="password"
+                placeholder="CVV/CVC"
+                maxLength={3}
+                autoComplete="cc-csc"
+                className="bg-[#f6f6f6] p-[10rem] text-[14rem] h-[40rem]"
+                status={errors.cvv ? 'error' : ''}
+                onChange={e => {
+                  // 只保留数字，并限制为 3 位
+                  const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 3)
+                  field.onChange(digitsOnly)
+                }}
+                value={field.value || ''}
+              />
+            )}
           />
           {errors.cvv && (
             <span className="text-red-500 text-[12rem] mt-[5rem]">
