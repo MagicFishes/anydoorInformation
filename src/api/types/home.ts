@@ -31,6 +31,7 @@ export interface QueryOrderInfoRes {
 export interface CreatePayInfoParams {
   orderNo: string;
   payChannel: string;
+  encodeLinkNo:string;
 }
 
 // 响应接口
@@ -60,6 +61,7 @@ export interface SubmitCreditCardParams {
   cardNumber: string;
   expireDate: string;
   cardSecurityCode?: string;
+  encodeLinkNo:string;
 }
 
 // 响应接口

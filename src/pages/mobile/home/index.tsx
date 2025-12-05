@@ -63,7 +63,8 @@ const createPaymentFormSchema = (t: (key: string) => string) => {
       ),
     cvv: z
       .string()
-      .refine(value => !value || /^\d{3,4}$/.test(value), { message: t('请输入3-4位数字') }),
+      .trim()
+      .regex(/^\d{3}$/, t('请输入3位安全码'))
   })
 }
 
@@ -236,15 +237,18 @@ const MobileHome = () => {
 
   // 时间已过期
   const [timeExpired, setTimeExpired] = useState(false)
+  // 使用 ref 保存倒计时到期状态，以便在轮询闭包中访问
+  const timeExpiredRef = useRef(false)
   // 支付/提交成功状态：true-支付成功，false-提交成功，null-未成功
   const [successType, setSuccessType] = useState<boolean | null>(null)
 
   // 根据 URL 中的语言参数同步全局语言
+  // 只在 URL 语言变化时同步，不会在手动切换语言时把全局语言"改回去"
   useEffect(() => {
     if (languageCode && languageCode !== globalLanguage) {
       setLanguage(languageCode)
     }
-  }, [languageCode, setLanguage, globalLanguage])
+  }, [languageCode, setLanguage])
 
   // 获取订单信息
   useEffect(() => {
@@ -298,6 +302,7 @@ const MobileHome = () => {
         cardNumber: cardNumber,
         expireDate: values.expiryDate,
         cardSecurityCode: values.cvv || undefined,
+        encodeLinkNo:encodeOrderNo as string
       })
 
       const responseData = response.data as any
@@ -360,13 +365,15 @@ const MobileHome = () => {
   const [payInfoId, setPayInfoId] = useState<number | null>(null)
   const [pollingInterval, setPollingInterval] = useState<ReturnType<typeof setInterval> | null>(null)
   const [needRefreshQrCode, setNeedRefreshQrCode] = useState<boolean>(false)
-  // 倒计时相关状态
+  // 倒计时相关状态（仅保存创建时间，具体倒计时在子组件中处理）
   const [createdTime, setCreatedTime] = useState<string | null>(null)
+  // 轮询开始时间，用于计算轮询是否超时
+  const [pollingStartTime, setPollingStartTime] = useState<number | null>(null)
 
   // 提取获取二维码的公共函数
   const fetchQrCode = useCallback(async () => {
     if (!orderInfo?.orderNo) return
-
+    if(orderInfo?.payState=='SUCCESS'){return}
     setQrCodeLoading(true)
     setQrCodeUrl('')
     setQrCodeText('')
@@ -376,6 +383,7 @@ const MobileHome = () => {
       const response = await HomeApi.createPayInfo({
         orderNo: orderInfo.orderNo,
         payChannel: payChannel,
+        encodeLinkNo:encodeOrderNo as string
       })
 
       const responseData = response.data as any
@@ -399,8 +407,11 @@ const MobileHome = () => {
           setQrCodeText(payBody)
           setQrCodeUrl('')
         }
+        // 重置需要刷新二维码的状态
         setNeedRefreshQrCode(false)
+        // 重置超时状态
         setTimeExpired(false)
+        timeExpiredRef.current = false
         return true
       } else {
         message.error(responseData.message || t('获取支付二维码失败'))
@@ -423,30 +434,66 @@ const MobileHome = () => {
     ) {
       fetchQrCode()
     } else {
+      // 切换到信用卡支付时清空二维码和轮询、倒计时
       setQrCodeUrl('')
       setQrCodeText('')
       setPayInfoId(null)
       setNeedRefreshQrCode(false)
       setCreatedTime(null)
+      setPollingStartTime(null)
+      setTimeExpired(false)
+      timeExpiredRef.current = false
       if (pollingInterval) {
         clearInterval(pollingInterval)
         setPollingInterval(null)
       }
     }
+    // 注意：不将 fetchQrCode 放入依赖项，避免循环依赖导致重复请求
+    // fetchQrCode 内部已经依赖了 selectedPaymentOption 和 orderInfo?.orderNo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // orderInfo?.orderNo, pollingInterval
   }, [selectedPaymentOption])
+
+  // 计算倒计时时长（秒）
+  const countdownDuration = useMemo(() => {
+    return import.meta.env.MODE === 'production' ? 18000 : 30
+  }, [])
+
+  // 计算轮询时长（秒）：线下环境比倒计时长10秒，线上环境长5分钟
+  const pollingDuration = useMemo(() => {
+    const extraTime = import.meta.env.MODE === 'production' ? 300 : 10 // 生产环境5分钟(300秒)，开发环境10秒
+    return countdownDuration + extraTime
+  }, [countdownDuration])
 
   // 轮询支付状态
   useEffect(() => {
+    // 只有在二维码显示成功（有链接或图片）且有 payInfoId 时才开始轮询
     if ((!qrCodeUrl && !qrCodeText) || !payInfoId || qrCodeLoading) {
       return
     }
 
+    // 如果已经有轮询在进行，先清除
     if (pollingInterval) {
       clearInterval(pollingInterval)
     }
 
+    // 记录轮询开始时间
+    const startTime = Date.now()
+    setPollingStartTime(startTime)
+
+    // 开始轮询，每隔3秒查询一次
     const interval = setInterval(async () => {
       try {
+        // 检查轮询是否超过时长
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        if (elapsed >= pollingDuration) {
+          // 轮询时长已到，停止轮询
+          clearInterval(interval)
+          setPollingInterval(null)
+          setPollingStartTime(null)
+          return
+        }
+
         const response = await HomeApi.queryPayInfo(payInfoId)
         const responseData = response.data as any
 
@@ -454,49 +501,65 @@ const MobileHome = () => {
           const status = responseData.data
 
           if (status === 'SUCCESS') {
+            // 支付成功，停止轮询并设置状态，不跳转
             clearInterval(interval)
             setPollingInterval(null)
+            setPollingStartTime(null)
             setSuccessType(true)
           } else if (status === 'PROGRESS') {
-            setNeedRefreshQrCode(false)
+            // 支付进行中，只有在倒计时未到期时才取消重新获取二维码的状态
+            // 如果倒计时已到期，保持需要重新获取二维码的状态
+            if (!timeExpiredRef.current) {
+              setNeedRefreshQrCode(false)
+            }
           } else {
             setNeedRefreshQrCode(true)
             clearInterval(interval)
+            setPollingInterval(null)
+            setPollingStartTime(null)
           }
         }
       } catch (error) {
         console.error('查询支付状态失败:', error)
+        // 终止轮询
         clearInterval(interval)
+        setPollingInterval(null)
+        setPollingStartTime(null)
       }
-    }, 3000)
+    }, 3000) // 每3秒轮询一次
 
     setPollingInterval(interval)
 
+    // 清理函数：组件卸载或依赖变化时清除定时器
     return () => {
       if (interval) {
         clearInterval(interval)
       }
+      setPollingStartTime(null)
     }
-  }, [qrCodeUrl, qrCodeText, payInfoId, qrCodeLoading])
+  }, [qrCodeUrl, qrCodeText, payInfoId, qrCodeLoading, pollingDuration])
 
-  // 清理轮询
+  // 清理轮询：当切换支付方式或组件卸载时
   useEffect(() => {
     return () => {
       if (pollingInterval) {
         clearInterval(pollingInterval)
       }
     }
-  }, [selectedPaymentOption, pollingInterval])
+  }, [selectedPaymentOption])
 
-  // 倒计时到期后的处理
+  // 同步 timeExpired 状态到 ref
+  useEffect(() => {
+    timeExpiredRef.current = timeExpired
+  }, [timeExpired])
+
+  // 倒计时到期后的处理：只标记超时、展示重新获取二维码，不停止轮询
   const handleCountdownExpire = useCallback(() => {
     setTimeExpired(true)
+    timeExpiredRef.current = true
     setNeedRefreshQrCode(true)
-    if (pollingInterval) {
-      clearInterval(pollingInterval)
-      setPollingInterval(null)
-    }
-  }, [pollingInterval])
+    // 不再停止轮询，让轮询继续运行直到轮询时长到期
+  }, [])
 
   // 支付选项（由后端返回的 payType 控制显示）
   const paymentOptions = useMemo(() => {
@@ -714,7 +777,9 @@ const MobileHome = () => {
               </div>
 
               {/* 支付选项 */}
-              <div className="grid grid-cols-3 bg-[#f6f6f6] mb-[20rem]">
+              <div 
+                className={`grid grid-cols-${paymentOptions.length} bg-[#f6f6f6] mb-[20rem]`}
+              >
                 {paymentOptions.map((item, index) => {
                   return (
                     <div
@@ -961,41 +1026,60 @@ const MobileHome = () => {
                     createdTime && (
                       <CountdownTimer
                         createdTime={createdTime}
+                        duration={countdownDuration}
                         label={t('支付剩余时间')}
                         onExpire={handleCountdownExpire}
                       />
                     )}
 
-                  {/* 信用卡按钮 */}
+                  {/* 信用卡按钮（只负责担保提交） */}
                   {selectedPaymentOption === 'creditCard' && (
                     <div
                       className="flex text-[14rem] cursor-pointer text-white justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727] active:bg-[#1a1a1a]"
                       onClick={async () => {
+                        // 先出发表单提交
+                        await onSubmit()
+                        
                         const updatedOrderInfo = await fetchOrderInfoData(false)
                         if (updatedOrderInfo) {
                           if (updatedOrderInfo.isGuarantee) {
                             message.success(t('担保已完成！'))
                           } else {
-                            onSubmit()
+                            message.warning(t('担保尚未完成，请稍后再试'))
                           }
-                        } else {
-                          message.error(t('获取订单信息失败，请重试'))
                         }
+                        // 先通过接口验证当前担保状态（担保成功时此区域不会显示，所以不需要检查）
+                        // const updatedOrderInfo = await fetchOrderInfoData(false)
+                        // if (updatedOrderInfo) {
+                        //   // 如果已经担保成功，显示提示信息，状态会通过 useEffect 自动更新
+                        //   if (updatedOrderInfo.isGuarantee) {
+                        //     message.success(t('担保已完成！'))
+                        //     // 订单状态会通过 useEffect 自动更新 successType
+                        //   } else {
+                        //     // 如果还没担保成功，触发表单提交
+                        //     onSubmit()
+                        //   }
+                        // } else {
+                        //   message.error(t('获取订单信息失败，请重试'))
+                        // }
                       }}
                     >
                       {t('确认担保')}
                     </div>
                   )}
 
-                  {/* 微信 / 支付宝按钮 */}
+                  {/* 微信 / 支付宝按钮（只负责扫码支付"我已完成"确认） */}
                   {selectedPaymentOption !== 'creditCard' && (
                     <div
                       className="flex text-[14rem] cursor-pointer text-white justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727] active:bg-[#1a1a1a]"
                       onClick={async () => {
+                        // 直接请求验证支付状态（支付成功时此区域不会显示，所以不需要检查）
                         const updatedOrderInfo = await fetchOrderInfoData(false)
                         if (updatedOrderInfo) {
+                          // 根据获取到的订单信息验证支付状态
                           if (updatedOrderInfo.payState === 'SUCCESS') {
                             message.success(t('支付完成！'))
+                            // 订单状态会通过 useEffect 自动更新 successType
                           } else {
                             message.warning(t('支付尚未完成，请稍后再试'))
                           }

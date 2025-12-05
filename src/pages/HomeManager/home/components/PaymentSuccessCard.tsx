@@ -38,7 +38,7 @@ export const PaymentSuccessCard = ({ isPaymentSuccess }: PaymentSuccessCardProps
             </div>
             {/* 成功描述 */}
             <div className="text-[18rem] text-gray-600 mb-[40rem] text-center leading-[1.6]">
-              {t('您的提交已成功完成，感谢您的使用！')}
+              {t('您的信息已成功提交，感谢您的使用！')}
             </div>
           </>
         )}

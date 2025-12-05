@@ -319,6 +319,7 @@ export default function Home() {
         cardNumber: cardNumber,
         expireDate: values.expiryDate, // 格式已经是 MM/YY
         cardSecurityCode: values.cvv || undefined,
+        encodeLinkNo:encodeOrderNo as string
       })
 
       const responseData = response.data as any
@@ -393,7 +394,7 @@ export default function Home() {
   // 提取获取二维码的公共函数
   const fetchQrCode = useCallback(async () => {
     if (!orderInfo?.orderNo) return
-
+    if(orderInfo?.payState=='SUCCESS'){return}
     setQrCodeLoading(true)
     setQrCodeUrl('') // 清空之前的二维码
     setQrCodeText('') // 清空之前的链接
@@ -403,6 +404,7 @@ export default function Home() {
       const response = await HomeApi.createPayInfo({
         orderNo: orderInfo.orderNo,
         payChannel: payChannel,
+        encodeLinkNo:encodeOrderNo as string
       })
 
       const responseData = response.data as any
@@ -744,7 +746,9 @@ export default function Home() {
                     </div>
                   </div>
                   {/* 支付选项 */}
-                  <div className="grid grid-cols-3 bg-[#f6f6f6] mb-[10rem] ">
+                  <div 
+                    className={`grid grid-cols-${paymentOptions.length} bg-[#f6f6f6] mb-[10rem]`}
+                  >
                     {paymentOptions.map((item, index) => {
                       return (
                         <div
@@ -1027,20 +1031,31 @@ export default function Home() {
                         <div
                           className=" text-[14rem] flex cursor-pointer  text-[white]  justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727]  "
                           onClick={async () => {
-                            // 先通过接口验证当前担保状态（担保成功时此区域不会显示，所以不需要检查）
-                            const updatedOrderInfo = await fetchOrderInfoData(false)
-                            if (updatedOrderInfo) {
-                              // 如果已经担保成功，显示提示信息，状态会通过 useEffect 自动更新
-                              if (updatedOrderInfo.isGuarantee) {
-                                message.success(t('担保已完成！'))
-                                // 订单状态会通过 useEffect 自动更新 successType
-                              } else {
-                                // 如果还没担保成功，触发表单提交
-                                onSubmit()
-                              }
+                            // 先出发表单提交
+                           await onSubmit()
+                          
+                           const updatedOrderInfo = await fetchOrderInfoData(false)
+                           if (updatedOrderInfo) {
+                            if (updatedOrderInfo.isGuarantee) {
+                              message.success(t('担保已完成！'))
                             } else {
-                              message.error(t('获取订单信息失败，请重试'))
+                              message.warning(t('担保尚未完成，请稍后再试'))
                             }
+                           }
+                            // 先通过接口验证当前担保状态（担保成功时此区域不会显示，所以不需要检查）
+                            // const updatedOrderInfo = await fetchOrderInfoData(false)
+                            // if (updatedOrderInfo) {
+                            //   // 如果已经担保成功，显示提示信息，状态会通过 useEffect 自动更新
+                            //   if (updatedOrderInfo.isGuarantee) {
+                            //     message.success(t('担保已完成！'))
+                            //     // 订单状态会通过 useEffect 自动更新 successType
+                            //   } else {
+                            //     // 如果还没担保成功，触发表单提交
+                            //     onSubmit()
+                              // }
+                            // } else {
+                            //   message.error(t('获取订单信息失败，请重试'))
+                            // }
                           }}
                         >
                           {t('确认担保')}
