@@ -484,7 +484,7 @@ export default function Home() {
 
   // 计算倒计时时长（秒）
   const countdownDuration = useMemo(() => {
-    return import.meta.env.MODE === 'production' ? 18000 : 30
+    return import.meta.env.MODE === 'production' ? 1800 : 30
   }, [])
 
   // 计算轮询时长（秒）：线下环境比倒计时长10秒，线上环境长5分钟
