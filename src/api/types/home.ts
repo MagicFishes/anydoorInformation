@@ -23,6 +23,7 @@ export interface QueryOrderInfoRes {
       payType:string;//ALL、CREDIT、PAY   CREDIT:担保信用卡，PAY :支付
       isGuarantee:boolean;//是否担保
       payState:string;//\SUCCESS  PROGRESS
+      payAmount:string;
     };
     version: string;
     timestamp: string;

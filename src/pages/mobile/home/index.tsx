@@ -14,6 +14,7 @@ import { useAppStore } from '@/store/storeZustand'
 import { PaymentSuccessCard } from '@/pages/HomeManager/home/components/PaymentSuccessCard'
 import { CreditCardForm } from '@/pages/HomeManager/home/components/CreditCardForm'
 import { AdvantageCard } from '@/pages/HomeManager/home/components/AdvantageCard'
+import { HotelInfoCard } from '@/pages/HomeManager/home/components/HotelInfoCard'
 
 // 创建表单验证规则的函数（支持翻译）
 const createPaymentFormSchema = (t: (key: string) => string) => {
@@ -693,74 +694,12 @@ const MobileHome = () => {
         <div className="flex-1 px-[20rem] pb-[20rem]">
           {/* 酒店信息卡片 */}
           {orderInfo && (
-            <div className="w-full border-[1px] border-solid border-gray-300 mb-[20rem] bg-white">
-              <div className="w-full min-h-[120rem]">
-                <img
-                  src={orderInfo?.hotelThumbnail || '/image/home/home1.png'}
-                  alt={orderInfo?.hotelName || ''}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-[20rem]">
-                {/* 酒店信息 */}
-                <div className="text-[14rem] flex-col flex mb-[20rem] border-b-[1rem] border-solid border-gray-300 pb-[20rem]">
-                  <div className="text-[18rem] mb-[5rem] tracking-[2rem] font-bold">
-                    {orderInfo?.hotelName || t('酒店名称')}
-                  </div>
-                  <div className="text-[14rem] text-gray-400">{orderInfo?.hotelEnName || ''}</div>
-                  {orderInfo?.hotelAddress && (
-                    <div className="text-[14rem] text-gray-400">{orderInfo.hotelAddress}</div>
-                  )}
-                </div>
-                {/* 入住信息 */}
-                <div className="text-[14rem] flex-col flex">
-                  <div className="text-[14rem] flex-col flex mb-[15rem]">
-                    <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('入住日期')}</div>
-                    <div className="text-[18rem] font-bold tracking-[1rem]">
-                      {orderInfo?.checkIn ? formatDate(orderInfo.checkIn) : '-'}
-                    </div>
-                  </div>
-                  <div className="text-[14rem] flex-col flex mb-[15rem]">
-                    <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('离店日期')}</div>
-                    <div className="text-[18rem] font-bold tracking-[1rem]">
-                      {orderInfo?.checkOut ? formatDate(orderInfo.checkOut) : '-'}
-                    </div>
-                  </div>
-                  {/* 入住人信息 */}
-                  {orderInfo?.customerInfos?.map((item, index) => (
-                    <div key={index} className="text-[14rem] flex-col flex mb-[15rem]">
-                      <div className="text-gray-400 mb-[5rem] tracking-[1rem]">
-                        {t('客人')} {index + 1}
-                      </div>
-                      <div className="text-[18rem] font-bold tracking-[1rem]">
-                        {item.firstName} {item.lastName}
-                      </div>
-                    </div>
-                  ))}
-                  {/* 房型 */}
-                  {orderInfo?.roomName && (
-                    <div className="text-[14rem] flex flex-col mb-[15rem]">
-                      <div className="text-gray-400 mb-[5rem] tracking-[1rem]">{t('房型')}</div>
-                      <div className="text-[18rem] font-bold tracking-[1rem]">
-                        {orderInfo.roomName} x{orderInfo.roomNum || 1}
-                      </div>
-                    </div>
-                  )}
-                  {/* 总价 */}
-                  {orderInfo?.amount && (
-                    <div className="text-[16rem] mb-[5rem] flex flex-col border-t-[1px] border-solid border-gray-300 pt-[20rem] mt-[20rem]">
-                      <div className="flex justify-between mb-[5rem] font-bold tracking-[1rem]">
-                        <div className="text-gray-400">{t('总价')}</div>
-                        <div className="font-bold tracking-[1rem]">
-                          {orderInfo.currency}
-                          {orderInfo.amount}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <HotelInfoCard 
+              selectType={selectedPaymentOption} 
+              orderInfo={orderInfo} 
+              formatDate={formatDate}
+              className="w-full mb-[20rem]"
+            />
           )}
 
           {/* 支付区域 */}

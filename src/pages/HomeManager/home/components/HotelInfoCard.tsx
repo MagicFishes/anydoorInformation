@@ -1,18 +1,26 @@
 import { useTranslation } from 'react-i18next'
 import type { QueryOrderInfoRes } from '@/api/types/home'
 
-// 单独抽离的酒店信息卡片，只在 PC 端该页面使用
+// 单独抽离的酒店信息卡片，PC 端和移动端共用
 interface HotelInfoCardProps {
+  selectType: string
   orderInfo: QueryOrderInfoRes['data'] | null
   // 复用父组件的日期格式化逻辑，避免在这里重复实现
   formatDate: (dateString: string) => string
+  // 可选的 className，用于覆盖默认样式（如移动端需要全宽）
+  className?: string
 }
 
-export const HotelInfoCard = ({ orderInfo, formatDate }: HotelInfoCardProps) => {
+export const HotelInfoCard = ({
+  selectType,
+  orderInfo,
+  formatDate,
+  className,
+}: HotelInfoCardProps) => {
   const { t } = useTranslation()
 
   return (
-    <div className="w-[32.7%] border-[1px] border-solid border-gray-300">
+    <div className={`w-[32.7%] border-[1px] border-solid border-gray-300 ${className || ''}`}>
       {/* 图片酒店信息 */}
       <div className="w-full min-h-[180rem] ">
         <img
@@ -57,8 +65,8 @@ export const HotelInfoCard = ({ orderInfo, formatDate }: HotelInfoCardProps) => 
                 <div>{t('姓氏')}</div>
               </div>
               <div className="flex justify-between font-bold tracking-[1rem]">
-                <div>{item.firstName}</div>
-                <div>{item.lastName}</div>
+                <div>{item.firstName??''}</div>
+                <div>{item.lastName??''}</div>
               </div>
             </div>
           ))}
@@ -77,18 +85,24 @@ export const HotelInfoCard = ({ orderInfo, formatDate }: HotelInfoCardProps) => 
         </div>
 
         {/* 总价 */}
-        <div className="text-[16rem] mb-[5rem] flex flex-col border-t-[1px] border-solid border-gray-300 pt-[20rem] mt-[20rem] ">
+        <div className="text-[16rem] flex flex-col border-t-[1px] border-solid border-gray-300 pt-[20rem] mt-[20rem] ">
           <div className="flex justify-between mb-[5rem] font-bold tracking-[1rem]">
             <div className="text-gray-400">{t('总价')}</div>
-            <div className="font-bold tracking-[1rem]">
-              {orderInfo?.currency}
-              {orderInfo?.amount || ''}
+            <div className="font-bold tracking-[1rem] flex flex-col   items-end">
+              <div>
+                {orderInfo?.currency}
+                {selectType == 'creditCard'
+                  ? orderInfo?.amount
+                  : `${orderInfo?.payAmount || ''}   `}
+              </div>
+            
             </div>
           </div>
         </div>
+        {selectType != 'creditCard'&&orderInfo?.amount!=orderInfo?.payAmount&&orderInfo?.payAmount!=''&& (
+                <div className="flex justify-end items-end text-[16rem] font-bold tracking-[1rem] ">{<div>{t('(含手续费)')}</div>}</div>
+              )}
       </div>
     </div>
   )
 }
-
-

@@ -243,6 +243,10 @@
     "zh": "总价",
     "en": "Total Price"
   },
+  "(含手续费)": {
+    "zh": "(含手续费)",
+    "en": "(Including Service Fee)"
+  },
   "支付成功": {
     "zh": "支付成功",
     "en": "Payment Successful"

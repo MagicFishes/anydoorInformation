@@ -1,6 +1,6 @@
 import { Input, Select } from 'antd'
 import { Controller, Control, FieldErrors, UseFormRegister } from 'react-hook-form'
-
+import { useIsMobile } from '@/store/storeZustand'
 // 为了降低耦合，这里不强绑具体的表单类型，使用 any 即可
 interface CreditCardFormProps {
   control: Control<any>
@@ -22,7 +22,7 @@ export const CreditCardForm = ({
 }: CreditCardFormProps) => {
   return (
     <form id="payment-form" onSubmit={onSubmit}>
-      <div className="grid grid-cols-2 gap-[20rem]">
+      <div className={`grid  gap-[20rem] ${useIsMobile() ? 'grid-cols-1' : 'grid-cols-2'}`}>
         {/* 第一项：卡号 */}
         <div className="flex flex-col">
           <label className="text-[14rem] tracking-[1rem] text-gray-400 mb-[5rem]">

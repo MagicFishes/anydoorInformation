@@ -720,7 +720,7 @@ export default function Home() {
       <div className="w-full flex-1 flex flex-col">
         <div className=" w-full flex gap-[1%]  justify-between">
           {/* 抽离后的酒店信息卡片 */}
-          <HotelInfoCard orderInfo={orderInfo} formatDate={formatDate} />
+          <HotelInfoCard selectType={selectedPaymentOption} orderInfo={orderInfo} formatDate={formatDate} />
           <div className="flex-1 flex-col flex border-[1px] pb-[18rem] border-solid border-gray-300  ">
             {!successInfo.show && (
               <>
