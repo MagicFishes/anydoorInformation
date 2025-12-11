@@ -50,7 +50,7 @@ export default function Header() {
     <>
       <div className={`flex w-[100%] items-center justify-between py-[20rem] text-[12rem] ${isMobile ? 'p-[10rem]' : ''}`}>
         <div className="flex items-center justify-center">
-          <img onClick={() => navigate('/')} src="/image/logo.png" alt="" className=" h-[40rem]  cursor-pointer" />
+          <img onClick={() => window.open('https://jiudianzhifu.com', '_blank')} src="/image/logo.png" alt="" className=" h-[40rem]  cursor-pointer" />
           {!isMobile && (
             <>
               <div className="text-[20rem] mx-[10rem]  text-gray-500 ">/</div>

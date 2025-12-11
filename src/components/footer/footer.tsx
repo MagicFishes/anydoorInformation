@@ -40,7 +40,7 @@ export default function Footer(item: Props) {
       >
         <div className={isMobile ? 'w-full' : 'w-[70%]'}>
           <div className={`w-full flex ${isMobile ? 'justify-center' : ''}`}>
-            <img src="/image/logo.png" alt="" className="h-[40rem]" />
+            <img onClick={() => window.open('https://jiudianzhifu.com', '_blank')} src="/image/logo.png" alt="" className="h-[40rem] cursor-pointer" />
           </div>
           <div className={`w-full flex text-[14rem] mt-[10rem] text-gray-500 ${isMobile ? 'text-center' : ''}`}>
             © 2025 Jiudianzhifu Getaways Co., LLC All Rights Reserved.
