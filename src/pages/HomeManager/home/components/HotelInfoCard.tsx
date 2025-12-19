@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { EnvironmentOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined, CheckCircleOutlined, StarFilled, DownOutlined, UpOutlined } from '@ant-design/icons'
+import {
+  EnvironmentOutlined,
+  CalendarOutlined,
+  ClockCircleOutlined,
+  UserOutlined,
+  CheckCircleOutlined,
+  StarFilled,
+  DownOutlined,
+  UpOutlined,
+} from '@ant-design/icons'
 import type { QueryOrderInfoRes } from '@/api/types/home'
 
 // 单独抽离的酒店信息卡片，PC 端和移动端共用
@@ -35,10 +44,128 @@ export const HotelInfoCard = ({
   const nights = calculateNights()
   const adultsCount = orderInfo?.customerInfos?.length || 0
 
+  // 正常显示总价（没有额外货币）
+  const renderNormalPrice = () => {
+    const isNormalCurrency = orderInfo?.currency == orderInfo?.originalCurrency || orderInfo?.originalCurrency == null
+    
+    if (!isNormalCurrency) return null
+
+    return (
+      <>
+        <div className="text-gray-600 text-[20rem] mb-[8rem] flex items-center font-bold ">
+          {t('总价')}
+        </div>
+        <div className="flex items-baseline   flex-col   ">
+          <div className="text-[#D4AF37] text-[32rem] font-bold   tracking-[1rem] ">
+            <div>
+              <span className="mr-[10rem] text-[18rem]"> {orderInfo?.currency || ''}</span>
+              {selectType == 'creditCard'
+                ? orderInfo?.amount !== undefined && orderInfo?.amount !== null
+                  ? orderInfo.amount.toLocaleString()
+                  : t('暂无')
+                : orderInfo?.payAmount !== undefined && orderInfo?.payAmount !== null
+                  ? orderInfo.payAmount.toLocaleString()
+                  : t('暂无')}
+            </div>
+          </div>
+
+          {selectType != 'creditCard' &&
+            orderInfo?.payAmount !== undefined &&
+            orderInfo?.payAmount !== null &&
+            orderInfo?.amount !== orderInfo?.payAmount && (
+              <div className="text-gray-700 text-[11rem] mt-[4rem] text-end w-[100%]">
+                {t('包含')} {orderInfo?.currency || ''}
+                {orderInfo?.amount && orderInfo?.payAmount
+                  ? (orderInfo.amount - orderInfo.payAmount).toFixed(2)
+                  : t('0.00')}
+                {t('税费及手续费')}
+              </div>
+            )}
+        </div>
+      </>
+    )
+  }
+
+  // 有额外货币显示总价
+  const renderMultiCurrencyPrice = () => {
+    const hasMultiCurrency = orderInfo?.currency != orderInfo?.originalCurrency && orderInfo?.originalCurrency != null
+    
+    if (!hasMultiCurrency) return null
+
+    return (
+      <div className="flex items-baseline   flex-col  w-[100%]  ">
+        <div className="text-[#D4AF37] text-[32rem] font-bold  w-[100%]  tracking-[1rem] ">
+          <div className="flex flex-col items-center w-[100%]  ">
+            <div className="flex  w-[100%] justify-between items-center  ">
+              {/* 外国货币 */}
+              <div className="text-[18rem] font-bold">
+                {orderInfo?.originalCurrency || ''}
+                {orderInfo?.originalAmount !== undefined &&
+                orderInfo?.originalAmount !== null
+                  ? orderInfo.originalAmount.toLocaleString()
+                  : t('暂无')}
+              </div>
+              {/* 人民币 */}
+              <div className="text-[16rem] font-bold text-[#bebebe] ">
+               <span className=''> ≈</span>{orderInfo?.currency || ''}
+                {orderInfo?.amount !== undefined && orderInfo?.amount !== null
+                  ? orderInfo.amount.toLocaleString()
+                  : t('暂无')}
+              </div>
+            </div>
+
+            <div className="w-[100%] flex justify-between items-center text-[16rem]">
+              <div>{t('总价')}</div>
+              {/* 有没有计入手续费  有*/}
+              {selectType != 'creditCard' && (
+                <div>
+                  {orderInfo?.currency ?? ''}
+                  {orderInfo?.payAmount !== undefined && orderInfo?.payAmount !== null
+                    ? orderInfo.payAmount.toLocaleString()
+                    : t('暂无')}
+                </div>
+              )}
+              {/* 没有显示手续费 */}
+              {selectType == 'creditCard' && (
+                <div>
+                  {orderInfo?.currency ?? ''}
+                  {orderInfo?.amount !== undefined && orderInfo?.amount !== null
+                    ? orderInfo.amount.toLocaleString()
+                    : t('暂无')}
+                </div>
+              )}
+            </div>
+            {/* 手续费 */}
+            {selectType != 'creditCard' &&
+              orderInfo?.originalAmount !== undefined &&
+              orderInfo?.originalAmount && (
+                <div className=" w-[100%] flex justify-between items-center text-[12rem] mb-[5rem]">
+                  {/* <div>{t('手续费')}</div> */}
+                  {/* <div>
+               {orderInfo?.currency??''}
+               {orderInfo?.payAmount-orderInfo?.amount}
+               </div>  */}
+                  <div className="text-gray-700 text-[11rem] mt-[4rem] text-end w-[100%]">
+                    {t('包含')} {orderInfo?.currency || ''}
+                    {orderInfo?.amount && orderInfo?.payAmount
+                      ? (orderInfo.amount - orderInfo.payAmount).toFixed(2)
+                      : t('0.00')}
+                    {t('税费及手续费')}
+                  </div>
+                </div>
+              )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className={`w-[32.7%] rounded-[12px] border-[1px] border-solid border-gray-300 overflow-hidden bg-white ${className || ''}`}>
+    <div
+      className={`w-[32.7%] rounded-[12px] border-[1px] border-solid border-gray-300 overflow-hidden bg-white ${className || ''}`}
+    >
       {/* 图片酒店信息 */}
-      <div className="w-full min-h-[180rem] relative">
+      <div className="w-full  min-h-[180rem] relative">
         <img
           src={orderInfo?.hotelThumbnail || '/image/home/home1.png'}
           alt={orderInfo?.hotelName || t('酒店图片')}
@@ -56,21 +183,21 @@ export const HotelInfoCard = ({
         </div> */}
       </div>
 
-      <div className="w-full p-[24rem] bg-white">
+      <div className=" w-[100%] flex-col flex p-[24rem] bg-white">
         {/* 酒店信息 */}
         <div className="mb-[24rem]">
           {/* 星级 */}
           <div className="flex items-center gap-[4rem] mb-[12rem]">
-            {[1, 2, 3, 4, 5].map((star) => (
+            {[1, 2, 3, 4, 5].map(star => (
               <StarFilled key={star} className="text-[#D4AF37] text-[16rem]" />
             ))}
           </div>
-          
+
           {/* 酒店名称 - 使用大号粗体衬线风格 */}
           <div className="text-gray-900 text-[28rem] font-bold mb-[8rem] tracking-[1rem] leading-[1.2] font-serif">
             {orderInfo?.hotelName || t('酒店名称')}
           </div>
-          
+
           {/* 酒店地址 */}
           <div className="flex items-center gap-[6rem] text-gray-600 text-[14rem]">
             <EnvironmentOutlined className="text-gray-600 text-[14rem]" />
@@ -87,7 +214,7 @@ export const HotelInfoCard = ({
               <span>{t('入住日期')}</span>
             </div>
             <div className="text-gray-900 text-[24rem] font-bold mb-[4rem]">
-              {orderInfo?.checkIn ? formatDate(orderInfo.checkIn) : t('暂无')}
+              {orderInfo?.checkIn ? orderInfo.checkIn : t('暂无')}
             </div>
             <div className="bg-gray-50 rounded-[6px] px-[10rem] py-[6rem] inline-flex items-center gap-[6rem]">
               <ClockCircleOutlined className="text-gray-700 text-[12rem]" />
@@ -105,7 +232,7 @@ export const HotelInfoCard = ({
               <span>{t('离店日期')}</span>
             </div>
             <div className="text-gray-900 text-[24rem] font-bold mb-[4rem]">
-              {orderInfo?.checkOut ? formatDate(orderInfo.checkOut) : t('暂无')}
+              {orderInfo?.checkOut ? orderInfo.checkOut : t('暂无')}
             </div>
             <div className="bg-gray-50 rounded-[6px] px-[10rem] py-[6rem] inline-flex items-center gap-[6rem] ml-auto">
               <ClockCircleOutlined className="text-gray-700 text-[12rem]" />
@@ -123,30 +250,38 @@ export const HotelInfoCard = ({
               <CheckCircleOutlined className="text-[#28A745] text-[16rem]" />
             </div>
           </div>
-          
+
           {/* 成人和晚数 */}
           {/* mb-[12rem] pb-[12rem]  */}
           <div className=" border-gray-200">
             <div className="flex items-center gap-[16rem] mb-[12rem]">
-              <div 
+              <div
                 className="flex items-center gap-[6rem] text-gray-600 text-[14rem] cursor-pointer hover:text-gray-900 transition-colors"
                 onClick={() => setIsExpanded(!isExpanded)}
               >
                 <UserOutlined className="text-gray-600 text-[14rem]" />
-                <span>{adultsCount} {t('位成人')}</span>
+                <span>
+                  {adultsCount} {t('位成人')}
+                </span>
                 {orderInfo?.customerInfos && orderInfo.customerInfos.length > 0 && (
                   <span className="ml-[4rem]">
-                    {isExpanded ? <UpOutlined className="text-[12rem]" /> : <DownOutlined className="text-[12rem]" />}
+                    {isExpanded ? (
+                      <UpOutlined className="text-[12rem]" />
+                    ) : (
+                      <DownOutlined className="text-[12rem]" />
+                    )}
                   </span>
                 )}
               </div>
               <div className="w-[1px] h-[16rem] bg-gray-300"></div>
               <div className="flex items-center gap-[6rem] text-gray-600 text-[14rem]">
                 <ClockCircleOutlined className="text-gray-600 text-[14rem]" />
-                <span>{nights} {t('晚')}</span>
+                <span>
+                  {nights} {t('晚')}
+                </span>
               </div>
             </div>
-            
+
             {/* 展开的入住人信息 */}
             {isExpanded && orderInfo?.customerInfos && orderInfo.customerInfos.length > 0 && (
               <div className="mt-[12rem] pt-[12rem] border-t border-gray-200">
@@ -157,7 +292,10 @@ export const HotelInfoCard = ({
                 </div>
                 {/* 内容行 */}
                 {orderInfo.customerInfos.map((customer, index) => (
-                  <div key={index} className="flex items-center justify-between mb-[8rem] last:mb-0">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between mb-[8rem] last:mb-0"
+                  >
                     <div className="text-gray-700 text-[13rem]">{customer.firstName || '-'}</div>
                     <div className="text-gray-700 text-[13rem]">{customer.lastName || '-'}</div>
                   </div>
@@ -174,33 +312,11 @@ export const HotelInfoCard = ({
         </div>
 
         {/* 总价 */}
-        <div className="pt-[20rem] border-t border-gray-200 flex justify-between">
-          <div className="text-gray-600 text-[20rem] mb-[8rem] flex items-center font-bold">{t('总价')}</div>
-          <div className="flex items-baseline   flex-col text-end  ">
-            <div className="text-[#D4AF37] text-[32rem] font-bold   tracking-[1rem] ">
-             <span  className='mr-[10rem] text-[18rem]'> {orderInfo?.currency || ''}</span>
-              {selectType == 'creditCard'
-                ? (orderInfo?.amount !== undefined && orderInfo?.amount !== null
-                    ? orderInfo.amount.toLocaleString()
-                    : t('暂无'))
-                : (orderInfo?.payAmount !== undefined && orderInfo?.payAmount !== null
-                    ? orderInfo.payAmount.toLocaleString()
-                    : t('暂无'))}
-            </div>
-
-            {selectType != 'creditCard' &&
-              orderInfo?.payAmount !== '' &&
-              orderInfo?.amount !== orderInfo?.payAmount && (
-              <div className="text-gray-700 text-[11rem] mt-[4rem] text-end w-[100%]">
-              {t('包含')} {orderInfo?.currency || ''}
-              {orderInfo?.amount && orderInfo?.payAmount
-                ? (orderInfo.amount - parseFloat(orderInfo.payAmount)).toFixed(2)
-                : t('0.00')}
-              {t('税费及手续费')}
-            </div>
-          )}
-          </div>
-      
+        <div
+          className={`pt-[20rem] w-[100%] border-t border-gray-200 flex  ${orderInfo?.currency == orderInfo?.originalCurrency || orderInfo?.originalCurrency == null ? 'justify-between' : 'justify-end  '}`}
+        >
+          {renderNormalPrice()}
+          {renderMultiCurrencyPrice()}
         </div>
       </div>
     </div>

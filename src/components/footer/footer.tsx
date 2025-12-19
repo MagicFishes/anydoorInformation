@@ -50,7 +50,7 @@ export default function Footer(item: Props) {
             StayPayment
           </div>
           <div className={`w-full flex text-[14rem] mt-[10rem] text-gray-500 ${isMobile ? 'text-center' : ''}`}>
-            © 2025 Jiudianzhifu Getaways Co., LLC All Rights Reserved.
+            © 2025 StayPayment Getaways Co., LLC All Rights Reserved.
           </div>
         </div>
         <div

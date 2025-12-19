@@ -367,14 +367,14 @@ export const CreditCardForm = ({ control, register, errors, t, onSubmit }: Credi
                     <Input
                       {...field}
                       type="password"
-                      placeholder="123"
-                      maxLength={3}
+                      placeholder="123/1234"
+                      maxLength={4}
                       autoComplete="cc-csc"
                       className="bg-[white] pl-[10rem] pr-[40rem] text-[14rem] h-[40rem]"
                       status={errors.cvv ? 'error' : ''}
                       onChange={e => {
                         // 只保留数字，并限制为 3 位
-                        const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 3)
+                        const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 4)
                         field.onChange(digitsOnly)
                       }}
                       value={field.value || ''}

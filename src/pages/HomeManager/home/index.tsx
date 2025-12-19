@@ -65,7 +65,7 @@ const createPaymentFormSchema = (t: (key: string) => string) => {
     cvv: z
       .string()
       .trim()
-      .regex(/^\d{3}$/, t('请输入3位安全码')),
+      .regex(/^\d{3,4}$/, t('请输入3-4位安全码')),
   })
 }
 // 支付方式图标
