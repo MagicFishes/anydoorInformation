@@ -686,12 +686,12 @@ const MobileHome = () => {
       <Header />
       <div className="w-full flex-1 flex flex-col bg-gray-50">
         {/* 移动端头部 */}
-        <div className="w-full bg-[#dfffdf] py-[10rem] flex justify-center items-center mb-[20rem]">
+        <div className="w-full bg-[#dfffdf] py-[10rem] flex justify-center items-center mb-[10rem]">
           <img src="/image/home/Frame4.png" alt="" className="w-[20rem] h-[20rem] mr-[10rem]" />
           <div className="text-[16rem] font-bold text-center text-[#1aad19]">{t('安全担保支付')}</div>
         </div>
 
-        <div className="flex-1 px-[20rem] pb-[20rem]">
+        <div className="flex-1  pb-[20rem]">
           {/* 酒店信息卡片 */}
           {orderInfo && (
             <HotelInfoCard 
@@ -715,32 +715,44 @@ const MobileHome = () => {
                 </div>
               </div>
 
-              {/* 支付选项 */}
-              <div 
-                className={`grid grid-cols-${paymentOptions.length} bg-[#f6f6f6] mb-[20rem]`}
-              >
-                {paymentOptions.map((item, index) => {
-                  return (
-                    <div
-                      onClick={() => setSelectedPaymentOption(item.type)}
-                      key={index}
-                      className="w-full cursor-pointer flex flex-col justify-center items-center py-[15rem]"
-                      style={{
-                        backgroundColor:
-                          item.type === selectedPaymentOption ? '#272727' : '#f6f6f6',
-                        color: item.type === selectedPaymentOption ? '#fff' : '#bfbfbf',
-                      }}
+            {/* 支付选项 */}
+            <div 
+              className={`grid grid-cols-${paymentOptions.length} gap-[20rem]  mb-[10rem]`}
+            >
+              {paymentOptions.map((item, index) => {
+                return (
+                  <div
+                    onClick={() => setSelectedPaymentOption(item.type)}
+                    key={index}
+                    className={`w-full cursor-pointer flex flex-col justify-center items-center py-[8rem]  rounded-[8px] transition-all ${
+                      item.type === selectedPaymentOption
+                        ? 'bg-[white]  border-[1px] border-gray-900'
+                        : 'bg-[white] border-[1px] border-gray-300'
+                    }`}
+                  >
+                    <img
+                      src={
+                        // selectedImage
+                        item.type === selectedPaymentOption ? item.image : item.image
+                      }
+                      alt=""
+                      className={`w-[32rem] h-[32rem] object-cover mb-[8rem] ${
+                        item.type === selectedPaymentOption ? 'opacity-100' : 'opacity-60'
+                      }`}
+                    />
+                    <span
+                      className={`text-[14rem] font-medium ${
+                        item.type === selectedPaymentOption
+                          ? 'text-gray-500 text-[16rem]  font-bold'
+                          : 'text-gray-500'
+                      }`}
                     >
-                      <img
-                        src={item.type === selectedPaymentOption ? item.selectedImage : item.image}
-                        alt=""
-                        className="w-[20rem] h-[20rem] mb-[5rem] object-cover"
-                      />
-                      <span className="text-[12rem]">{item.title}</span>
-                    </div>
-                  )
-                })}
-              </div>
+                      {item.title}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
 
               {/* 支付主体区域 */}
               <div className="border-b-[1px] border-solid border-gray-300 pt-[20rem] pb-[20rem]">

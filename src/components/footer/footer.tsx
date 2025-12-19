@@ -1,7 +1,7 @@
 import { useIsMobile } from '@/store/storeZustand'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-
+import { Shield } from 'lucide-react'
 type Props = {
   title: string
 }
@@ -39,8 +39,15 @@ export default function Footer(item: Props) {
         className={`w-full py-[10rem] flex ${isMobile ? 'flex-col p-[10rem]' : 'justify-between'}`}
       >
         <div className={isMobile ? 'w-full' : 'w-[70%]'}>
-          <div className={`w-full flex ${isMobile ? 'justify-center' : ''}`}>
-            <img onClick={() => window.open('https://jiudianzhifu.com', '_blank')} src="/image/logo.png" alt="" className="h-[40rem] cursor-pointer" />
+          <div onClick={() => window.open('https://jiudianzhifu.com', '_blank')} className={`w-full cursor-pointer items-center flex font-bold text-[24rem] ${isMobile ? 'justify-center' : ''}`}>
+               {/* 品牌图标圆形徽章 */}
+               <div className="w-[50px] mr-[10rem]  h-[50px] rounded-[10rem] bg-slate-900 text-[#c8a562]   flex items-center justify-center shadow-lg relative overflow-hidden flex-shrink-0">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+              <Shield className="w-[28px] h-[28px] fill-current" strokeWidth={2.5} />
+            </div>
+
+            {/* <img onClick={() => window.open('https://jiudianzhifu.com', '_blank')} src="/image/logo.png" alt="" className="h-[40rem] cursor-pointer" /> */}
+            StayPayment
           </div>
           <div className={`w-full flex text-[14rem] mt-[10rem] text-gray-500 ${isMobile ? 'text-center' : ''}`}>
             © 2025 Jiudianzhifu Getaways Co., LLC All Rights Reserved.

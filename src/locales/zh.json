@@ -334,6 +334,66 @@
   "支付链接已更新": {
     "zh": "支付链接已更新",
     "en": "Payment link has been updated"
+  },
+  "已验证商户": {
+    "zh": "已验证商户",
+    "en": "Verified Merchant"
+  },
+  "酒店图片": {
+    "zh": "酒店图片",
+    "en": "Hotel Image"
+  },
+  "酒店名称": {
+    "zh": "酒店名称",
+    "en": "Hotel Name"
+  },
+  "地址信息暂无": {
+    "zh": "地址信息暂无",
+    "en": "Address information not available"
+  },
+  "暂无": {
+    "zh": "暂无",
+    "en": "N/A"
+  },
+  "从": {
+    "zh": "从",
+    "en": "From"
+  },
+  "至": {
+    "zh": "至",
+    "en": "Until"
+  },
+  "位成人": {
+    "zh": "位成人",
+    "en": "Adults"
+  },
+  "晚": {
+    "zh": "晚",
+    "en": "Nights"
+  },
+  "24小时前免费取消": {
+    "zh": "24小时前免费取消",
+    "en": "Free Cancellation until 24h before"
+  },
+  "包含": {
+    "zh": "包含",
+    "en": "Includes"
+  },
+  "税费及手续费": {
+    "zh": "税费及手续费",
+    "en": "taxes & fees"
+  },
+  "0.00": {
+    "zh": "0.00",
+    "en": "0.00"
+  },
+  "页面不存在": {
+    "zh": "页面不存在",
+    "en": "Page Not Found"
+  },
+  "请检查链接是否正确": {
+    "zh": "请检查链接是否正确",
+    "en": "Please check if the link is correct"
   }
 }
 

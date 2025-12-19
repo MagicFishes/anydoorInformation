@@ -65,7 +65,7 @@ const createPaymentFormSchema = (t: (key: string) => string) => {
     cvv: z
       .string()
       .trim()
-      .regex(/^\d{3}$/, t('请输入3位安全码'))
+      .regex(/^\d{3}$/, t('请输入3位安全码')),
   })
 }
 // 支付方式图标
@@ -73,9 +73,9 @@ const payIconList = {
   Visa: '/image/home/payIcon/Visa.png',
   Mastercard: '/image/home/payIcon/Mastercard.png',
   Amex: '/image/home/payIcon/Amex.png',
-  Unionpay: '/image/home/payIcon/UnionPay.png',
-  Dinersclub: '/image/home/payIcon/DinersClub.png',
-  JCB: '/image/home/payIcon/JCB.png',
+  // Unionpay: '/image/home/payIcon/UnionPay.png',
+  // Dinersclub: '/image/home/payIcon/DinersClub.png',
+  // JCB: '/image/home/payIcon/JCB.png',
 }
 
 // 格式化倒计时显示（秒数转换为 MM:SS）
@@ -319,7 +319,7 @@ export default function Home() {
         cardNumber: cardNumber,
         expireDate: values.expiryDate, // 格式已经是 MM/YY
         cardSecurityCode: values.cvv || undefined,
-        encodeLinkNo:encodeOrderNo as string
+        encodeLinkNo: encodeOrderNo as string,
       })
 
       const responseData = response.data as any
@@ -394,7 +394,9 @@ export default function Home() {
   // 提取获取二维码的公共函数
   const fetchQrCode = useCallback(async () => {
     if (!orderInfo?.orderNo) return
-    if(orderInfo?.payState=='SUCCESS'){return}
+    if (orderInfo?.payState == 'SUCCESS') {
+      return
+    }
     setQrCodeLoading(true)
     setQrCodeUrl('') // 清空之前的二维码
     setQrCodeText('') // 清空之前的链接
@@ -404,7 +406,7 @@ export default function Home() {
       const response = await HomeApi.createPayInfo({
         orderNo: orderInfo.orderNo,
         payChannel: payChannel,
-        encodeLinkNo:encodeOrderNo as string
+        encodeLinkNo: encodeOrderNo as string,
       })
 
       const responseData = response.data as any
@@ -720,12 +722,16 @@ export default function Home() {
       <div className="w-full flex-1 flex flex-col">
         <div className=" w-full flex gap-[1%]  justify-between">
           {/* 抽离后的酒店信息卡片 */}
-          <HotelInfoCard selectType={selectedPaymentOption} orderInfo={orderInfo} formatDate={formatDate} />
-          <div className="flex-1 flex-col flex border-[1px] pb-[18rem] border-solid border-gray-300  ">
+          <HotelInfoCard
+            selectType={selectedPaymentOption}
+            orderInfo={orderInfo}
+            formatDate={formatDate}
+          />
+          <div className="flex-1 flex-col flex border-[1px] pb-[18rem] border-solid rounded-[12rem] overflow-hidden border-gray-300   ">
             {!successInfo.show && (
               <>
                 {/* 安全担保支付 */}
-                <div className="w-full  bg-[#dfffdf]  py-[10rem]  flex justify-center items-center mb-[20rem">
+                <div className="w-full  bg-[#dfffdf]  py-[10rem]   flex justify-center items-center mb-[20rem">
                   <img
                     src="/image/home/Frame4.png"
                     alt=""
@@ -746,149 +752,198 @@ export default function Home() {
                     </div>
                   </div>
                   {/* 支付选项 */}
-                  <div 
-                    className={`grid grid-cols-${paymentOptions.length} bg-[#f6f6f6] mb-[10rem]`}
+                  <div
+                    className={`grid grid-cols-${paymentOptions.length} gap-[20rem]  mb-[10rem] border-b-[1rem] pb-[40rem] `}
                   >
                     {paymentOptions.map((item, index) => {
                       return (
                         <div
                           onClick={() => setSelectedPaymentOption(item.type)}
                           key={index}
-                          className="w-full cursor-pointer flex justify-center items-center h-[45rem]"
-                          style={{
-                            backgroundColor:
-                              item.type === selectedPaymentOption ? '#272727' : '#f6f6f6',
-                            color: item.type === selectedPaymentOption ? '#fff' : '#bfbfbf',
-                          }}
+                          className={`w-full cursor-pointer flex flex-col justify-center items-center py-[8rem]  rounded-[8px] transition-all transform ${
+                            item.type === selectedPaymentOption
+                              ? 'bg-[white]  border-[1px] border-gray-900 scale-[1.03] shadow-lg'
+                              : 'bg-[white] border-[1px] border-gray-300 scale-[0.98] hover:scale-[1.01] hover:shadow-md'
+                          }`}
                         >
                           <img
                             src={
-                              item.type === selectedPaymentOption ? item.selectedImage : item.image
+                              // selectedImage
+                              item.type === selectedPaymentOption ? item.image : item.image
                             }
                             alt=""
-                            className=" w-[20rem] object-cover"
+                            className={`w-[32rem] h-[32rem] object-cover mb-[8rem] transition-opacity ${
+                              item.type === selectedPaymentOption
+                                ? 'opacity-100'
+                                : 'opacity-60 group-hover:opacity-80'
+                            }`}
                           />
-                          {item.title}
+                          <span
+                            className={`text-[14rem]  transition-colors ${
+                              item.type === selectedPaymentOption
+                                ? 'text-gray-500 text-[16rem]  font-bold'
+                                : 'text-gray-500'
+                            }`}
+                          >
+                            {item.title}
+                          </span>
                         </div>
                       )
                     })}
                   </div>
                   {/* 支付主体区域（不再因为超时而整体隐藏） */}
                   <div className="border-b-[1px] border-solid border-gray-300 pt-[20rem] pb-[20rem]">
-                    {/* 根据支付选项显示不同内容 */}
-                    {/* 根据 isGuarantee判断是否已经完成担保,如果已经完成,显示别的提示 */}
-                    {selectedPaymentOption === 'creditCard' && !orderInfo?.isGuarantee && (
-                      <CreditCardForm
-                        control={control}
-                        register={register}
-                        errors={errors}
-                        t={t}
-                        onSubmit={onSubmit}
-                      />
-                    )}
-                    {selectedPaymentOption === 'creditCard' && orderInfo?.isGuarantee && (
-                      <div className="w-full flex justify-center items-center flex-col">
-                        <div className="text-[14rem] text-gray-400">
-                          {t('您已提交担保信用卡，请等待酒店确认')}
-                        </div>
+                    {/* 信用卡表单（带动效） */}
+                    <div
+                      className={`transition-all duration-1000 ease-out transform ${
+                        selectedPaymentOption === 'creditCard' && !orderInfo?.isGuarantee
+                          ? 'opacity-100 translate-y-0 max-h-[1200rem]'
+                          : 'opacity-0 -translate-y-2 max-h-0 overflow-hidden pointer-events-none'
+                      }`}
+                    >
+                      <div>
+                        {selectedPaymentOption === 'creditCard' && !orderInfo?.isGuarantee && (
+                          <CreditCardForm
+                            control={control}
+                            register={register}
+                            errors={errors}
+                            t={t}
+                            onSubmit={onSubmit}
+                          />
+                        )}
                       </div>
-                    )}
-                    {/* 微信支付：显示二维码 */}
-                    {selectedPaymentOption === 'wechatPay' &&
-                      orderInfo?.payState != 'SUCCESS' && (
-                        <div className="w-full flex justify-center items-center flex-col">
-                          <div className=" w-[200rem] h-[200rem]  border-[1px] border-solid border-gray-300 flex justify-center items-center relative">
-                            {qrCodeLoading ? (
-                              <Spin size="large" />
-                            ) : qrCodeText ? (
-                              <>
-                                <Space
-                                  direction="vertical"
-                                  align="center"
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  <QRCode value={qrCodeText || '-'} size={200} />
-                                </Space>
-                                {needRefreshQrCode && (
-                                  <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center">
-                                    <div className="text-white text-[14rem] mb-[10rem] text-center px-[20rem]">
-                                      {t('二维码已过期，请重新获取')}
-                                    </div>
-                                    <Button
-                                      type="primary"
-                                      size="small"
-                                      onClick={async () => {
-                                        const success = await fetchQrCode()
-                                        if (success) {
-                                          message.success(t('二维码已更新'))
-                                        }
-                                      }}
-                                      className="h-[30rem] text-[12rem]"
-                                    >
-                                      {t('重新获取二维码')}
-                                    </Button>
-                                  </div>
-                                )}
-                              </>
-                            ) : qrCodeUrl ? (
-                              <>
-                                <img
-                                  src={qrCodeUrl}
-                                  alt={t('支付二维码')}
-                                  className="w-full h-full object-contain"
-                                />
-                                {needRefreshQrCode && (
-                                  <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center">
-                                    <div className="text-white text-[14rem] mb-[10rem] text-center px-[20rem]">
-                                      {t('二维码已过期，请重新获取')}
-                                    </div>
-                                    <Button
-                                      type="primary"
-                                      size="small"
-                                      onClick={async () => {
-                                        const success = await fetchQrCode()
-                                        if (success) {
-                                          message.success(t('二维码已更新'))
-                                        }
-                                      }}
-                                      className="h-[30rem] text-[12rem]"
-                                    >
-                                      {t('重新获取二维码')}
-                                    </Button>
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <div className="text-[14rem] text-gray-400">
-                                {t('加载二维码中...')}
-                              </div>
-                            )}
-                          </div>
-                          <div className="w-[100%] h-[50rem] flex justify-center items-center">
-                            <img
-                              className="h-[30rem] mr-[10rem]"
-                              src="/image/scanCode.png"
-                              alt=""
-                            />
-                            <div>
-                              {t('打开')}{' '}
-                              <span className="text-[#1aad19] font-bold">{t('微信')}</span>{' '}
-                              {t('的')}{' '}
-                              <span className="text-[#1aad19] font-bold">{t('扫一扫')}</span>
+                    </div>
+
+                    {/* 信用卡已担保提示（带动效） */}
+                    <div
+                      className={`transition-all duration-1000 ease-out transform ${
+                        selectedPaymentOption === 'creditCard' && orderInfo?.isGuarantee
+                          ? 'opacity-100 translate-y-0 max-h-[200rem]'
+                          : 'opacity-0 -translate-y-2 max-h-0 overflow-hidden pointer-events-none'
+                      }`}
+                    >
+                      <div>
+                        {selectedPaymentOption === 'creditCard' && orderInfo?.isGuarantee && (
+                          <div className="w-full flex justify-center items-center flex-col">
+                            <div className="text-[14rem] text-gray-400">
+                              {t('您已提交担保信用卡，请等待酒店确认')}
                             </div>
                           </div>
-                          <div className="text-[14rem] tracking-[1rem] text-gray-400">
-                            {t('扫描上方二维码进行支付')}
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 微信支付：显示二维码 */}
+                    <div
+                      className={`transition-all duration-1000 ease-out transform ${
+                        selectedPaymentOption === 'wechatPay' && orderInfo?.payState != 'SUCCESS'
+                          ? 'opacity-100 translate-y-0 max-h-[1200rem]'
+                          : 'opacity-0 -translate-y-2 max-h-0 overflow-hidden pointer-events-none'
+                      }`}
+                    >
+                      {selectedPaymentOption === 'wechatPay' &&
+                        orderInfo?.payState != 'SUCCESS' && (
+                          <div className="w-full flex justify-center items-center flex-col">
+                            <div className=" w-[200rem] h-[200rem]  border-[1px] border-solid border-gray-300 flex justify-center items-center relative">
+                              {qrCodeLoading ? (
+                                <Spin size="large" />
+                              ) : qrCodeText ? (
+                                <>
+                                  <Space
+                                    direction="vertical"
+                                    align="center"
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      justifyContent: 'center',
+                                    }}
+                                  >
+                                    <QRCode value={qrCodeText || '-'} size={200} />
+                                  </Space>
+                                  {needRefreshQrCode && (
+                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center">
+                                      <div className="text-white text-[14rem] mb-[10rem] text-center px-[20rem]">
+                                        {t('二维码已过期，请重新获取')}
+                                      </div>
+                                      <Button
+                                        type="primary"
+                                        size="small"
+                                        onClick={async () => {
+                                          const success = await fetchQrCode()
+                                          if (success) {
+                                            message.success(t('二维码已更新'))
+                                          }
+                                        }}
+                                        className="h-[30rem] text-[12rem]"
+                                      >
+                                        {t('重新获取二维码')}
+                                      </Button>
+                                    </div>
+                                  )}
+                                </>
+                              ) : qrCodeUrl ? (
+                                <>
+                                  <img
+                                    src={qrCodeUrl}
+                                    alt={t('支付二维码')}
+                                    className="w-full h-full object-contain"
+                                  />
+                                  {needRefreshQrCode && (
+                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center">
+                                      <div className="text-white text-[14rem] mb-[10rem] text-center px-[20rem]">
+                                        {t('二维码已过期，请重新获取')}
+                                      </div>
+                                      <Button
+                                        type="primary"
+                                        size="small"
+                                        onClick={async () => {
+                                          const success = await fetchQrCode()
+                                          if (success) {
+                                            message.success(t('二维码已更新'))
+                                          }
+                                        }}
+                                        className="h-[30rem] text-[12rem]"
+                                      >
+                                        {t('重新获取二维码')}
+                                      </Button>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="text-[14rem] text-gray-400">
+                                  {t('加载二维码中...')}
+                                </div>
+                              )}
+                            </div>
+                            <div className="w-[100%] h-[50rem] flex justify-center items-center">
+                              <img
+                                className="h-[30rem] mr-[10rem]"
+                                src="/image/scanCode.png"
+                                alt=""
+                              />
+                              <div>
+                                {t('打开')}{' '}
+                                <span className="text-[#1aad19] font-bold">{t('微信')}</span>{' '}
+                                {t('的')}{' '}
+                                <span className="text-[#1aad19] font-bold">{t('扫一扫')}</span>
+                              </div>
+                            </div>
+                            <div className="text-[14rem] tracking-[1rem] text-gray-400">
+                              {t('扫描上方二维码进行支付')}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                    </div>
+
                     {/* 支付宝支付：显示跳转按钮 */}
-                    {selectedPaymentOption === 'alipay' &&
-                      orderInfo?.payState != 'SUCCESS' && (
+                    <div
+                      className={`transition-all duration-1000 ease-out transform ${
+                        selectedPaymentOption === 'alipay' && orderInfo?.payState != 'SUCCESS'
+                          ? 'opacity-100 translate-y-0 max-h-[800rem]'
+                          : 'opacity-0 -translate-y-2 max-h-0 overflow-hidden pointer-events-none'
+                      }`}
+                    >
+                      {selectedPaymentOption === 'alipay' && orderInfo?.payState != 'SUCCESS' && (
                         <div className="w-full flex justify-center items-center flex-col">
                           {qrCodeLoading ? (
                             <div className="text-[14rem] text-gray-400">
@@ -905,7 +960,7 @@ export default function Home() {
                                     window.open(qrCodeText, '_blank')
                                   }
                                 }}
-                                className="h-[50rem] text-[16rem] font-bold bg-[#0d99ff] border-[#0d99ff] hover:bg-[#0a7acc] hover:border-[#0a7acc]"
+                                className="h-[50rem] text-[16rem] font-bold bg-[#0d99ff] border-[#0d99ff] hover:bg-[#0a7acc] hover:border-[#0a99ff]"
                                 style={{
                                   minWidth: '200rem',
                                   opacity: needRefreshQrCode ? 0.6 : 1,
@@ -945,14 +1000,24 @@ export default function Home() {
                           )}
                         </div>
                       )}
+                    </div>
+
                     {/* 显示已支付的文案 */}
-                    {(selectedPaymentOption === 'wechatPay' ||
-                      selectedPaymentOption === 'alipay') &&
-                      orderInfo?.payState == 'SUCCESS' && (
-                        <>
+                    <div
+                      className={`transition-all duration-300 ease-out transform ${
+                        (selectedPaymentOption === 'wechatPay' ||
+                          selectedPaymentOption === 'alipay') &&
+                        orderInfo?.payState == 'SUCCESS'
+                          ? 'opacity-100 translate-y-0 max-h-[200rem]'
+                          : 'opacity-0 -translate-y-2 max-h-0 overflow-hidden pointer-events-none'
+                      }`}
+                    >
+                      {(selectedPaymentOption === 'wechatPay' ||
+                        selectedPaymentOption === 'alipay') &&
+                        orderInfo?.payState == 'SUCCESS' && (
                           <div className="text-[14rem] text-gray-400">{t('您已支付成功')}</div>
-                        </>
-                      )}
+                        )}
+                    </div>
                   </div>
                   {/* 时间已过期文案（暂时隐藏，仅保留代码方便以后开启） */}
                   {false && timeExpired && (
@@ -1016,7 +1081,8 @@ export default function Home() {
                     {/* 右侧支付 */}
                     <div className=" w-[250rem] flex flex-col">
                       {/* 信用卡不显示倒计时，只显示按钮；微信/支付宝支付显示倒计时 + 按钮 */}
-                      {(selectedPaymentOption === 'wechatPay' || selectedPaymentOption === 'alipay') &&
+                      {(selectedPaymentOption === 'wechatPay' ||
+                        selectedPaymentOption === 'alipay') &&
                         orderInfo?.payState != 'SUCCESS' &&
                         createdTime && (
                           <CountdownTimer
@@ -1032,16 +1098,16 @@ export default function Home() {
                           className=" text-[14rem] flex cursor-pointer  text-[white]  justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727]  "
                           onClick={async () => {
                             // 先出发表单提交
-                           await onSubmit()
-                          
-                           const updatedOrderInfo = await fetchOrderInfoData(false)
-                           if (updatedOrderInfo) {
-                            if (updatedOrderInfo.isGuarantee) {
-                              message.success(t('担保已完成！'))
-                            } else {
-                              message.warning(t('担保尚未完成，请稍后再试'))
+                            await onSubmit()
+
+                            const updatedOrderInfo = await fetchOrderInfoData(false)
+                            if (updatedOrderInfo) {
+                              if (updatedOrderInfo.isGuarantee) {
+                                message.success(t('担保已完成！'))
+                              } else {
+                                message.warning(t('担保尚未完成，请稍后再试'))
+                              }
                             }
-                           }
                             // 先通过接口验证当前担保状态（担保成功时此区域不会显示，所以不需要检查）
                             // const updatedOrderInfo = await fetchOrderInfoData(false)
                             // if (updatedOrderInfo) {
@@ -1052,7 +1118,7 @@ export default function Home() {
                             //   } else {
                             //     // 如果还没担保成功，触发表单提交
                             //     onSubmit()
-                              // }
+                            // }
                             // } else {
                             //   message.error(t('获取订单信息失败，请重试'))
                             // }

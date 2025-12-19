@@ -2,6 +2,8 @@ import { Select, Space } from 'antd'
 import { useAppStore } from '@/store/storeZustand'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { CreditCard, Lock, Smartphone, CheckCircle, Loader2, ShieldCheck, Globe, ChevronDown, Shield } from 'lucide-react';
+
 
 export default function Header() {
   const navigate = useNavigate()
@@ -50,7 +52,28 @@ export default function Header() {
     <>
       <div className={`flex w-[100%] items-center justify-between py-[20rem] text-[12rem] ${isMobile ? 'p-[10rem]' : ''}`}>
         <div className="flex items-center justify-center">
-          <img onClick={() => window.open('https://jiudianzhifu.com', '_blank')} src="/image/logo.png" alt="" className=" h-[40rem]  cursor-pointer" />
+          {/* <img onClick={() => window.open('https://jiudianzhifu.com', '_blank')} src="/image/logo.png" alt="" className=" h-[40rem]  cursor-pointer" /> */}
+          <div
+            onClick={() => window.open('https://jiudianzhifu.com', '_blank')}
+            className="cursor-pointer flex items-center gap-[10rem]"
+          >
+            {/* 品牌图标圆形徽章 */}
+            <div className="w-[50px] h-[50px] rounded-[10rem] bg-slate-900 text-[#c8a562]  flex items-center justify-center shadow-lg relative overflow-hidden flex-shrink-0">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+              <Shield className="w-[28px] fill-current h-[28px]" strokeWidth={2.5} />
+            </div>
+
+            {/* 品牌文案 */}
+            <div className="flex flex-col leading-tight">
+              <div className="flex items-center gap-[4rem]">
+                <span className="text-[20rem] md:text-[24rem] font-bold">StayPayment</span>
+              </div>
+              <div className="mt-[4rem] text-[11rem] md:text-[12rem] text-gray-500 flex">
+              <Lock className="w-[12rem] h-[12rem] text-green-500" />
+                Secure Checkout
+              </div>
+            </div>
+          </div>
           {!isMobile && (
             <>
               <div className="text-[20rem] mx-[10rem]  text-gray-500 ">/</div>
