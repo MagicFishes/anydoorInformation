@@ -95,6 +95,10 @@
     "zh": "请输入3位安全码",
     "en": "Please enter the 3-digit security code"
   },
+  "请输入3-4位安全码": {
+    "zh": "请输入3-4位安全码",
+    "en": "Please enter the 3-4 digit security code"
+  },
   "请输入3-4位数字": {
     "zh": "请输入3-4位数字",
     "en": "Please enter 3-4 digits"
@@ -394,6 +398,46 @@
   "请检查链接是否正确": {
     "zh": "请检查链接是否正确",
     "en": "Please check if the link is correct"
+  },
+  "我证明所有信息完整准确。我特此授权酒店收取本表格所示的所有费用。我同意按上述指示进行一次性或定期收费。我同意我对本账单的责任不予免除，并同意在所示个人或公司未能支付部分或全部费用时承担个人责任。": {
+    "zh": "我证明所有信息完整准确。我特此授权酒店收取本表格所示的所有费用。我同意按上述指示进行一次性或定期收费。我同意我对本账单的责任不予免除，并同意在所示个人或公司未能支付部分或全部费用时承担个人责任。",
+    "en": "I certify that all information is complete and accurate. I hereby authorize the hotel to charge all fees shown on this form. I agree to make one-time or recurring charges as indicated above. I agree that my liability for this bill is not waived, and I agree to assume personal responsibility if the indicated individual or company fails to pay part or all of the fees."
+  },
+  "请先勾选同意以上声明": {
+    "zh": "请先勾选同意以上声明",
+    "en": "Please check the box to agree to the above statement"
+  },
+  "担保尚未完成，请稍后再试": {
+    "zh": "担保尚未完成，请稍后再试",
+    "en": "Guarantee not completed yet, please try again later"
+  },
+  "您已提交担保信用卡，请等待酒店确认": {
+    "zh": "您已提交担保信用卡，请等待酒店确认",
+    "en": "You have submitted your credit card guarantee, please wait for hotel confirmation"
+  },
+  "加载中...": {
+    "zh": "加载中...",
+    "en": "Loading..."
+  },
+  "加载二维码中...": {
+    "zh": "加载二维码中...",
+    "en": "Loading QR code..."
+  },
+  "二维码已过期，请重新获取": {
+    "zh": "二维码已过期，请重新获取",
+    "en": "QR code has expired, please refresh"
+  },
+  "重新获取二维码": {
+    "zh": "重新获取二维码",
+    "en": "Refresh QR Code"
+  },
+  "二维码已更新": {
+    "zh": "二维码已更新",
+    "en": "QR code has been updated"
+  },
+  "支付二维码": {
+    "zh": "支付二维码",
+    "en": "Payment QR Code"
   }
 }
 

@@ -376,6 +376,10 @@ export default function Home() {
     [t]
   )
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>('creditCard')
+  // 协议勾选状态
+  const [isAgreementChecked, setIsAgreementChecked] = useState<boolean>(false)
+  // 是否显示协议未勾选的错误提示
+  const [showAgreementError, setShowAgreementError] = useState<boolean>(false)
   // 二维码相关状态
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('') // 用于 base64 图片
   const [qrCodeText, setQrCodeText] = useState<string>('') // 用于链接（如 weixin://）
@@ -803,13 +807,43 @@ export default function Home() {
                     >
                       <div>
                         {selectedPaymentOption === 'creditCard' && !orderInfo?.isGuarantee && (
-                          <CreditCardForm
+                        <div>
+                           <CreditCardForm
                             control={control}
                             register={register}
                             errors={errors}
                             t={t}
                             onSubmit={onSubmit}
                           />
+                          <div className='text-[14rem] text-gray-400 mt-[20rem]'>
+                            {/* 勾选 */}
+                            <div className='flex flex-col gap-[8rem]'>
+                              <div className='flex items-start'>
+                                <input 
+                                  type="checkbox" 
+                                  className='w-[20rem] h-[20rem] cursor-pointer mt-[3rem]' 
+                                  checked={isAgreementChecked}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked
+                                    setIsAgreementChecked(checked)
+                                    if (checked) {
+                                      setShowAgreementError(false)
+                                    }
+                                  }}
+                                />
+                                <div className='text-[14rem] text-gray-400 ml-[10rem]'>
+                                  {t('我证明所有信息完整准确。我特此授权酒店收取本表格所示的所有费用。我同意按上述指示进行一次性或定期收费。我同意我对本账单的责任不予免除，并同意在所示个人或公司未能支付部分或全部费用时承担个人责任。')}
+                                </div>
+                              </div>
+                              {showAgreementError && !isAgreementChecked && (
+                                <div className='text-[12rem] text-[#f65353] ml-[22rem]'>
+                                  {t('请先勾选同意以上声明')}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                         
                         )}
                       </div>
                     </div>
@@ -1095,8 +1129,17 @@ export default function Home() {
                       {/* 信用卡按钮（只负责担保提交） */}
                       {selectedPaymentOption === 'creditCard' && (
                         <div
-                          className=" text-[14rem] flex cursor-pointer  text-[white]  justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727]  "
-                          onClick={async () => {
+                          className="text-[14rem] flex cursor-pointer text-[white] justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727] hover:bg-[#3a3a3a] transition-colors"
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+
+                            // 检查是否已勾选协议
+                            if (!isAgreementChecked) {
+                              setShowAgreementError(true)
+                              return
+                            }
+
                             // 先出发表单提交
                             await onSubmit()
 

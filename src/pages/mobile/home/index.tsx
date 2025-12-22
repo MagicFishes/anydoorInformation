@@ -65,7 +65,7 @@ const createPaymentFormSchema = (t: (key: string) => string) => {
     cvv: z
       .string()
       .trim()
-      .regex(/^\d{3}$/, t('请输入3位安全码'))
+      .regex(/^\d{3,4}$/, t('请输入3-4位安全码'))
   })
 }
 
@@ -358,6 +358,9 @@ const MobileHome = () => {
   )
 
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>('creditCard')
+  // 协议勾选状态（信用卡担保）
+  const [isAgreementChecked, setIsAgreementChecked] = useState<boolean>(false)
+  const [showAgreementError, setShowAgreementError] = useState<boolean>(false)
   // 二维码相关状态
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('')
   const [qrCodeText, setQrCodeText] = useState<string>('')
@@ -755,9 +758,10 @@ const MobileHome = () => {
             </div>
 
               {/* 支付主体区域 */}
-              <div className="border-b-[1px] border-solid border-gray-300 pt-[20rem] pb-[20rem]">
-                {/* 信用卡表单 */}
-                {selectedPaymentOption === 'creditCard' && !orderInfo?.isGuarantee && (
+            <div className="border-b-[1px] border-solid border-gray-300 pt-[20rem] pb-[20rem]">
+              {/* 信用卡表单 + 协议勾选 */}
+              {selectedPaymentOption === 'creditCard' && !orderInfo?.isGuarantee && (
+                <div>
                   <CreditCardForm
                     control={control}
                     register={register}
@@ -765,7 +769,37 @@ const MobileHome = () => {
                     t={t}
                     onSubmit={onSubmit}
                   />
-                )}
+                  <div className="text-[13rem] text-gray-400 mt-[16rem]">
+                    {/* 勾选协议 */}
+                    <div className="flex flex-col gap-[8rem]">
+                      <div className="flex items-start">
+                        <input
+                          type="checkbox"
+                          className="w-[18rem] h-[18rem] cursor-pointer mt-[3rem]"
+                          checked={isAgreementChecked}
+                          onChange={e => {
+                            const checked = e.target.checked
+                            setIsAgreementChecked(checked)
+                            if (checked) {
+                              setShowAgreementError(false)
+                            }
+                          }}
+                        />
+                        <div className="text-[13rem] text-gray-400 ml-[8rem] leading-[1.5]">
+                          {t(
+                            '我证明所有信息完整准确。我特此授权酒店收取本表格所示的所有费用。我同意按上述指示进行一次性或定期收费。我同意我对本账单的责任不予免除，并同意在所示个人或公司未能支付部分或全部费用时承担个人责任。'
+                          )}
+                        </div>
+                      </div>
+                      {showAgreementError && !isAgreementChecked && (
+                        <div className="text-[12rem] text-[#f65353] ml-[20rem]">
+                          {t('请先勾选同意以上声明')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
                 {selectedPaymentOption === 'creditCard' && orderInfo?.isGuarantee && (
                   <div className="w-full flex justify-center items-center flex-col">
                     <div className="text-[14rem] text-gray-400">
@@ -988,6 +1022,11 @@ const MobileHome = () => {
                     <div
                       className="flex text-[14rem] cursor-pointer text-white justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727] active:bg-[#1a1a1a]"
                       onClick={async () => {
+                         // 检查是否已勾选协议
+                         if (!isAgreementChecked) {
+                          setShowAgreementError(true)
+                          return
+                        }
                         // 先出发表单提交
                         await onSubmit()
                         
