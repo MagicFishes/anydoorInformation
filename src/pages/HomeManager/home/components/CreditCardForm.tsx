@@ -22,7 +22,7 @@ const detectCardType = (cardNumber: string): string | null => {
   // Mastercard: 以51-55开头
   if (/^5[1-5]/.test(digitsOnly)) return 'MASTER'
   // AAE: 其他情况或特定规则
-  if (/^3[47]/.test(digitsOnly)) return 'Amex' // Amex
+  if (/^3[47]/.test(digitsOnly)) return 'AMEX' // Amex
 
   return null
 }
@@ -34,8 +34,6 @@ const getCardTypeLabel = (cardType: string | null): string => {
       return 'VISA'
     case 'MASTER':
       return 'MASTER'
-    case 'UP':
-      return 'UP'
     case 'Amex':
       return 'Amex'
     default:
@@ -163,10 +161,14 @@ export const CreditCardForm = ({ control, register, errors, t, onSubmit }: Credi
               field.onChange(cardTypes[0].value)
               defaultSetRef.current = true
             }
-            
-            // 使用实际值或默认值来显示选中状态
+            // 如果根据卡号识别出了卡种，并且当前表单值不一致，则同步写回表单值
+            if (detectedCardType && field.value !== detectedCardType) {
+              field.onChange(detectedCardType)
+            }
+
+            // 使用表单中的值（已和识别结果同步），否则使用默认值
             const displayValue = field.value || cardTypes[0]?.value
-            
+
             return (
               <div className="flex gap-[20rem]">
                 {cardTypes.map(card => {
@@ -227,7 +229,7 @@ export const CreditCardForm = ({ control, register, errors, t, onSubmit }: Credi
               name="cardNumber"
               control={control}
               render={({ field }) => {
-                // const cardType = detectCardType(field.value || '')
+                const cardType = detectCardType(field.value || '')
 
                 return (
                   <div className="relative">
@@ -256,13 +258,13 @@ export const CreditCardForm = ({ control, register, errors, t, onSubmit }: Credi
                       <CreditCardOutlined className="text-gray-400 text-[16rem]" />
                     </div>
                     {/* 右侧卡种标签 */}
-                    {/* {cardType && (
+                    {cardType && (
                       <div className="absolute right-[12rem] top-1/2 -translate-y-1/2">
                         <span className="text-gray-500 text-[12rem]">
                           {getCardTypeLabel(cardType)}
                         </span>
                       </div>
-                    )} */}
+                    )}
                   </div>
                 )
               }}
