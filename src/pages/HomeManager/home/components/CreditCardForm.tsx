@@ -34,8 +34,8 @@ const getCardTypeLabel = (cardType: string | null): string => {
       return 'VISA'
     case 'MASTER':
       return 'MASTER'
-    case 'Amex':
-      return 'Amex'
+    case 'AMEX':
+      return 'AMEX'
     default:
       return ''
   }
