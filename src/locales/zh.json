@@ -19,6 +19,14 @@
     "zh": "安全担保支付",
     "en": "Secure Guarantee Payment"
   },
+  "处理中...": {
+    "zh": "处理中...",
+    "en": "Processing..."
+  },
+  "请在 {time} 内完成支付，否则订单将被自动取消": {
+    "zh": "请在 {time} 内完成支付，否则订单将被自动取消",
+    "en": "Please complete payment within {time}, otherwise the order will be automatically cancelled"
+  },
   "完成您的预订支付": {
     "zh": "完成您的预订支付",
     "en": "Complete Your Booking Payment"
@@ -26,6 +34,14 @@
   "体验最可靠的酒店直连支付网关，官方认证，安全无忧": {
     "zh": "体验最可靠的酒店直连支付网关，官方认证，安全无忧",
     "en": "Experience the most reliable hotel direct payment gateway, officially certified, safe and secure"
+  },
+  "支付链接已过期": {
+    "zh": "支付链接已过期",
+    "en": "Payment Link Expired"
+  },
+  "支付链接已过期，请重新获取": {
+    "zh": "支付链接已过期，请重新获取",
+    "en": "The payment link has expired, please get a new one"
   },
   "信用卡": {
     "zh": "信用卡",
@@ -326,10 +342,6 @@
   "加载支付链接中...": {
     "zh": "加载支付链接中...",
     "en": "Loading payment link..."
-  },
-  "支付链接已过期，请重新获取": {
-    "zh": "支付链接已过期，请重新获取",
-    "en": "Payment link has expired, please refresh"
   },
   "重新获取支付链接": {
     "zh": "重新获取支付链接",

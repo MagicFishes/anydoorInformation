@@ -15,6 +15,7 @@ import { HotelInfoCard } from './components/HotelInfoCard'
 import { AdvantageCard } from './components/AdvantageCard'
 import { CreditCardForm } from './components/CreditCardForm'
 import { PaymentSuccessCard } from './components/PaymentSuccessCard'
+import { CountdownExpiredCard } from './components/CountdownExpiredCard'
 
 // 创建表单验证规则的函数（支持翻译）
 const createPaymentFormSchema = (t: (key: string) => string) => {
@@ -28,6 +29,18 @@ const createPaymentFormSchema = (t: (key: string) => string) => {
           return digits.length >= 13 && digits.length <= 19
         },
         { message: t('请输入13-19位数字的卡号') }
+      )
+      .refine(
+        value => {
+          const digits = value.replace(/\s/g, '').replace(/\D/g, '')
+          if (!digits) return false
+          return ['3', '4', '5'].includes(digits[0])
+        },
+        {
+          message: t(
+            '输入的卡号有误，只支持American Express（3开头）、VISA（4开头）、Mastercard（5开头）的国际支付信用卡，请重新输入。'
+          ),
+        }
       )
       .refine(
         value => {
@@ -84,6 +97,92 @@ const formatCountdown = (seconds: number) => {
   const minutes = Math.floor(safeSeconds / 60)
   const remainingSeconds = safeSeconds % 60
   return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
+}
+
+// 支付倒计时提示组件（用于显示在安全担保支付区域）
+interface PaymentCountdownProps {
+  createdTime: string | null
+  duration?: number
+  t: (key: string) => string
+  onExpire?: () => void
+}
+
+const PaymentCountdown = ({
+  createdTime,
+  duration = import.meta.env.MODE === 'production' ? 1800 : 300,
+  t,
+  onExpire,
+}: PaymentCountdownProps) => {
+  // 计算当前剩余时间
+  const calcRemaining = useCallback(() => {
+    if (!createdTime || createdTime.trim() === '') {
+      return 0
+    }
+    try {
+      const now = Date.now()
+      const created = new Date(createdTime).getTime()
+      // 检查时间是否有效
+      if (isNaN(created)) {
+        console.warn('无效的创建时间:', createdTime)
+        return 0
+      }
+      const elapsed = Math.floor((now - created) / 1000)
+      const remaining = Math.max(0, duration - elapsed)
+      // console.log('倒计时计算:', {
+      //   createdTime,
+      //   now: new Date(now).toLocaleString(),
+      //   created: new Date(created).toLocaleString(),
+      //   elapsed,
+      //   duration,
+      //   remaining,
+      // })
+      return remaining
+    } catch (error) {
+      console.error('计算倒计时失败:', error, createdTime)
+      return 0
+    }
+  }, [createdTime, duration])
+
+  const [remaining, setRemaining] = useState<number>(() => calcRemaining())
+
+  useEffect(() => {
+    // 如果 createdTime 为空或无效，不启动倒计时
+    if (!createdTime || createdTime.trim() === '') {
+      console.log('PaymentCountdown: createdTime 为空，显示默认值')
+      setRemaining(0)
+      return
+    }
+
+    // 初始化一次
+    const initial = calcRemaining()
+    setRemaining(initial)
+
+    if (initial <= 0) {
+      onExpire && onExpire()
+      return
+    }
+
+    const interval = setInterval(() => {
+      const next = calcRemaining()
+      setRemaining(next)
+      if (next <= 0) {
+        clearInterval(interval)
+        onExpire && onExpire()
+      }
+    }, 1000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [calcRemaining, createdTime, onExpire])
+
+  // 如果没有创建时间或创建时间为空，显示默认文本（30:00）
+  if (!createdTime || createdTime.trim() === '') {
+    return <>{t('请在 {time} 内完成支付，否则订单将被自动取消').replace('{time}', '30:00')}</>
+  }
+
+  const timeText = remaining > 0 ? formatCountdown(remaining) : '00:00'
+  return <>{t('请在 {time} 内完成支付，否则订单将被自动取消').replace('{time}', timeText)}</>
 }
 
 // 只负责右下角倒计时显示的小组件，内部自己每秒更新，不影响父组件
@@ -150,6 +249,8 @@ export default function Home() {
   // 使用翻译
   const { t } = useTranslation()
   const navigate = useNavigate()
+  // 使用 antd message hook（兼容 React 19）
+  const [messageApi, messageContextHolder] = message.useMessage()
 
   // 获取全局语言状态和方法
   const { language: globalLanguage, setLanguage } = useAppStore()
@@ -202,31 +303,42 @@ export default function Home() {
         const response = await HomeApi.queryOrderInfo(requestLanguageCode, encodeOrderNo)
         const responseData = response.data as any
         console.log('✅ 订单信息响应:', responseData)
-
-        if (responseData.code == '00000') {
+        
+        if (responseData?.code == '00000') {
           const orderData = responseData?.data || responseData?.data?.data
           if (orderData) {
             setOrderInfo(orderData as QueryOrderInfoRes['data'])
             return orderData as QueryOrderInfoRes['data']
           } else {
             if (showLoading) {
-              message.error(t('获取订单信息失败，请检查链接是否正确'))
+              messageApi.error(t('获取订单信息失败，请检查链接是否正确'))
             }
             setHasValidParams(false)
+            // 数据为空时设置为过期状态
+            setTimeExpired(true)
+            timeExpiredRef.current = true
             return null
           }
         } else {
-          if (showLoading) {
-            message.error(responseData.message)
-          }
+          // if (showLoading) {
+            messageApi.error(responseData.message)
+          // }
           setHasValidParams(false)
+          // 接口报错时设置为过期状态
+          setTimeExpired(true)
+          timeExpiredRef.current = true
           return null
         }
       } catch (error) {
         console.error('❌ 获取订单信息失败:', error)
+
+         console.log("4564654")
         if (showLoading) {
           setHasValidParams(false)
         }
+        // 接口异常时设置为过期状态
+        setTimeExpired(true)
+        timeExpiredRef.current = true
         return null
       } finally {
         if (showLoading) {
@@ -304,7 +416,7 @@ export default function Home() {
 
       // 检查是否有订单信息
       if (!orderInfo?.orderNo) {
-        message.error(t('订单信息不存在，请刷新页面重试'))
+        messageApi.error(t('订单信息不存在，请刷新页面重试'))
         return
       }
 
@@ -329,20 +441,20 @@ export default function Home() {
         if (updatedOrderInfo) {
           // 根据获取到的订单信息验证担保状态
           if (updatedOrderInfo.isGuarantee) {
-            message.success(t('支付信息提交成功！'))
+            messageApi.success(t('支付信息提交成功！'))
             // 订单状态会通过 useEffect 自动更新 successType
           } else {
-            message.warning(t('担保信息尚未生效，请稍后再试'))
+            messageApi.warning(t('担保信息尚未生效，请稍后再试'))
           }
         } else {
-          message.error(t('获取订单信息失败，请重试'))
+          messageApi.error(t('获取订单信息失败，请重试'))
         }
       } else {
-        message.error(responseData.message || t('支付提交失败，请重试'))
+        messageApi.error(responseData.message || t('支付提交失败，请重试'))
       }
     } catch (error: any) {
       console.error('支付提交失败:', error)
-      message.error(error?.message || t('支付提交失败，请重试'))
+      messageApi.error(error?.message || t('支付提交失败，请重试'))
     } finally {
       setIsSubmitting(false)
     }
@@ -351,6 +463,8 @@ export default function Home() {
   // 表单数据状态
   const [paymentData, setPaymentData] = useState<PaymentFormData | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // 担保按钮的 loading 状态
+  const [isGuaranteeLoading, setIsGuaranteeLoading] = useState(false)
 
   const showImageList = useMemo(
     () => [
@@ -392,8 +506,21 @@ export default function Home() {
   const [needRefreshQrCode, setNeedRefreshQrCode] = useState<boolean>(false)
   // 倒计时相关状态（仅保存创建时间，具体倒计时在子组件中处理）
   const [createdTime, setCreatedTime] = useState<string | null>(null)
+  // 订单创建时间（从订单接口获取）
+  const [orderCreatedTime, setOrderCreatedTime] = useState<string | null>(null)
   // 轮询开始时间，用于计算轮询是否超时
   const [pollingStartTime, setPollingStartTime] = useState<number | null>(null)
+
+  // 当订单信息更新时，使用订单的 createdTime 设置倒计时
+  useEffect(() => {
+    if (orderInfo?.createdTime) {
+      setOrderCreatedTime(orderInfo.createdTime)
+      // 如果还没有设置 createdTime，或者订单的 createdTime 更新了，就使用订单的 createdTime
+      if (!createdTime || orderInfo.createdTime !== createdTime) {
+        setCreatedTime(orderInfo.createdTime)
+      }
+    }
+  }, [orderInfo?.createdTime])
 
   // 提取获取二维码的公共函数
   const fetchQrCode = useCallback(async () => {
@@ -447,12 +574,12 @@ export default function Home() {
         timeExpiredRef.current = false
         return true
       } else {
-        message.error(responseData.message || t('获取支付二维码失败'))
+        messageApi.error(responseData.message || t('获取支付二维码失败'))
         return false
       }
     } catch (error: any) {
       console.error('获取支付二维码失败:', error)
-      message.error(error?.message || t('获取支付二维码失败，请重试'))
+      messageApi.error(error?.message || t('获取支付二维码失败，请重试'))
       return false
     } finally {
       setQrCodeLoading(false)
@@ -488,9 +615,9 @@ export default function Home() {
     // orderInfo?.orderNo, pollingInterval
   }, [selectedPaymentOption])
 
-  // 计算倒计时时长（秒）
+  // 计算倒计时时长（秒）- 生产环境30分钟，开发环境300秒
   const countdownDuration = useMemo(() => {
-    return import.meta.env.MODE === 'production' ? 1800 : 30
+    return import.meta.env.MODE === 'production' ? 1800 : 300
   }, [])
 
   // 计算轮询时长（秒）：线下环境比倒计时长10秒，线上环境长5分钟
@@ -722,21 +849,25 @@ export default function Home() {
     : { show: false, isPaymentSuccess: false }
   return (
     <div className=" w-full min-h-screen flex flex-col ">
+      {messageContextHolder}
       <Header />
       <div className="w-full flex-1 flex flex-col">
         <div className=" w-full flex gap-[1%]  justify-between">
-          {/* 抽离后的酒店信息卡片 */}
-          <HotelInfoCard
-            selectType={selectedPaymentOption}
-            orderInfo={orderInfo}
-            formatDate={formatDate}
-          />
+          {/* 抽离后的酒店信息卡片 - 只在有订单信息且未过期时显示 */}
+          {orderInfo && !timeExpired && (
+            <HotelInfoCard 
+              selectType={selectedPaymentOption}
+              orderInfo={orderInfo}
+              formatDate={formatDate}
+            />
+          )}
           <div className="flex-1 flex-col flex border-[1px] pb-[18rem] border-solid rounded-[12rem] overflow-hidden border-gray-300   ">
-            {!successInfo.show && (
+            {!successInfo.show && !timeExpired && (
               <>
                 {/* 安全担保支付 */}
                 <div className="w-full  bg-[#dfffdf]  py-[10rem]   flex justify-center items-center mb-[20rem">
-                  <img
+                <div className='flex flex-col'>
+                  <div className='flex items-center justify-center'>  <img
                     src="/image/home/Frame4.png"
                     alt=""
                     className="w-[20rem] h-[20rem] mr-[10rem]"
@@ -744,6 +875,19 @@ export default function Home() {
                   <div className="text-[16rem] font-bold tracking-[1rem] text-center text-[#1aad19]">
                     {t('安全担保支付')}
                   </div>
+                  </div>
+                  {/* 只有在订单未支付且未担保时才显示倒计时 */}
+                  {orderInfo?.payState !== 'SUCCESS' && !orderInfo?.isGuarantee && (
+                    <div className='text-[14rem] text-red-400 font-bold'>
+                      <PaymentCountdown
+                        createdTime={orderInfo?.createdTime || null}
+                        duration={countdownDuration}
+                        t={t}
+                        onExpire={handleCountdownExpire}
+                      />
+                    </div>
+                  )}
+                </div>
                 </div>
                 <div className="px-[25rem]">
                   {/* 文本 */}
@@ -905,7 +1049,7 @@ export default function Home() {
                                         onClick={async () => {
                                           const success = await fetchQrCode()
                                           if (success) {
-                                            message.success(t('二维码已更新'))
+                                            messageApi.success(t('二维码已更新'))
                                           }
                                         }}
                                         className="h-[30rem] text-[12rem]"
@@ -933,7 +1077,7 @@ export default function Home() {
                                         onClick={async () => {
                                           const success = await fetchQrCode()
                                           if (success) {
-                                            message.success(t('二维码已更新'))
+                                            messageApi.success(t('二维码已更新'))
                                           }
                                         }}
                                         className="h-[30rem] text-[12rem]"
@@ -1014,7 +1158,7 @@ export default function Home() {
                                     onClick={async () => {
                                       const success = await fetchQrCode()
                                       if (success) {
-                                        message.success(t('支付链接已更新'))
+                                        messageApi.success(t('支付链接已更新'))
                                       }
                                     }}
                                     className="h-[30rem] text-[12rem] bg-[#0d99ff] border-[#0d99ff]"
@@ -1129,27 +1273,47 @@ export default function Home() {
                       {/* 信用卡按钮（只负责担保提交） */}
                       {selectedPaymentOption === 'creditCard' && (
                         <div
-                          className="text-[14rem] flex cursor-pointer text-[white] justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727] hover:bg-[#3a3a3a] transition-colors"
+                          className={`text-[14rem] flex cursor-pointer text-[white] justify-center items-center px-[20rem] py-[10rem] tracking-[1rem] bg-[#272727] hover:bg-[#3a3a3a] transition-colors ${
+                            isGuaranteeLoading ? 'cursor-not-allowed opacity-75' : ''
+                          }`}
                           onClick={async (e) => {
                             e.preventDefault()
                             e.stopPropagation()
+
+                            // 如果正在加载中，不允许重复点击
+                            if (isGuaranteeLoading) {
+                              return
+                            }
 
                             // 检查是否已勾选协议
                             if (!isAgreementChecked) {
                               setShowAgreementError(true)
                               return
                             }
+                           
+                            // 设置 loading 状态
+                            setIsGuaranteeLoading(true)
 
-                            // 先出发表单提交
-                            await onSubmit()
+                            try {
+                              // 延迟3秒
+                              await new Promise(resolve => setTimeout(resolve, 3000))
 
-                            const updatedOrderInfo = await fetchOrderInfoData(false)
-                            if (updatedOrderInfo) {
-                              if (updatedOrderInfo.isGuarantee) {
-                                message.success(t('担保已完成！'))
-                              } else {
-                                message.warning(t('担保尚未完成，请稍后再试'))
+                              // 先出发表单提交
+                              await onSubmit()
+
+                              const updatedOrderInfo = await fetchOrderInfoData(false)
+                              if (updatedOrderInfo) {
+                                if (updatedOrderInfo.isGuarantee) {
+                                  messageApi.success(t('担保已完成！'))
+                                } else {
+                                  // messageApi.warning(t('担保尚未完成，请稍后再试'))
+                                }
                               }
+                            } catch (error) {
+                              console.error('担保提交失败:', error)
+                            } finally {
+                              // 取消 loading 状态
+                              setIsGuaranteeLoading(false)
                             }
                             // 先通过接口验证当前担保状态（担保成功时此区域不会显示，所以不需要检查）
                             // const updatedOrderInfo = await fetchOrderInfoData(false)
@@ -1167,7 +1331,14 @@ export default function Home() {
                             // }
                           }}
                         >
-                          {t('确认担保')}
+                          {isGuaranteeLoading ? (
+                            <div className="flex items-center gap-[10rem]">
+                              <Spin size="small" />
+                              {/* <span>{t('处理中...')}</span> */}
+                            </div>
+                          ) : (
+                            t('确认担保')
+                          )}
                         </div>
                       )}
 
@@ -1181,13 +1352,13 @@ export default function Home() {
                             if (updatedOrderInfo) {
                               // 根据获取到的订单信息验证支付状态
                               if (updatedOrderInfo.payState === 'SUCCESS') {
-                                message.success(t('支付完成！'))
+                                messageApi.success(t('支付完成！'))
                                 // 订单状态会通过 useEffect 自动更新 successType
                               } else {
-                                message.warning(t('支付尚未完成，请稍后再试'))
+                                messageApi.warning(t('支付尚未完成，请稍后再试'))
                               }
                             } else {
-                              message.error(t('获取订单信息失败，请重试'))
+                              messageApi.error(t('获取订单信息失败，请重试'))
                             }
                           }}
                         >
@@ -1202,6 +1373,10 @@ export default function Home() {
             {/* 显示支付/提交成功 */}
             {successInfo.show && (
               <PaymentSuccessCard isPaymentSuccess={successInfo.isPaymentSuccess} />
+            )}
+            {/* 显示倒计时到期 - 只有在订单未支付且未担保时才显示 */}
+            {timeExpired && !successInfo.show && orderInfo?.payState !== 'SUCCESS' && !orderInfo?.isGuarantee && (
+              <CountdownExpiredCard />
             )}
           </div>
         </div>

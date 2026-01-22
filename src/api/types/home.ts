@@ -26,6 +26,7 @@ export interface QueryOrderInfoRes {
       payAmount:number;
       originalCurrency:string;
       originalAmount:number;
+      createdTime?: string; // 订单创建时间 yyyy-MM-dd HH:mm:ss
     };
     version: string;
     timestamp: string;

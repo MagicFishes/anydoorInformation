@@ -76,6 +76,16 @@ const BrandLogo = ({ network, className }: { network: string, className?: string
 export const CreditCardForm = ({ control, register, errors, t, onSubmit }: CreditCardFormProps) => {
   const [detectedCardType, setDetectedCardType] = useState<string | null>(null)
   const isMobile = useIsMobile()
+  const cardNumberValue = useWatch({
+    control,
+    name: 'cardNumber',
+  })
+
+  const isCardNumberPrefixInvalid = (() => {
+    const digitsOnly = (cardNumberValue || '').replace(/\s/g, '').replace(/\D/g, '')
+    if (!digitsOnly) return false
+    return !['3', '4', '5'].includes(digitsOnly[0])
+  })()
 
   // 卡种选项
   const cardTypes = [
@@ -269,9 +279,11 @@ export const CreditCardForm = ({ control, register, errors, t, onSubmit }: Credi
                 )
               }}
             />
-            {errors.cardNumber && (
+            {(errors.cardNumber || isCardNumberPrefixInvalid) && (
               <span className="text-red-500 text-[12rem] mt-[5rem]">
-                {String(errors.cardNumber.message || '')}
+                {isCardNumberPrefixInvalid
+                  ? '输入的卡号有误，只支持American Express（3开头）、VISA（4开头）、Mastercard（5开头）的国际支付信用卡，请重新输入。'
+                  : String(errors.cardNumber?.message || '')}
               </span>
             )}
           </div>
