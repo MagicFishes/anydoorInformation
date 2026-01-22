@@ -407,6 +407,10 @@
     "zh": "页面不存在",
     "en": "Page Not Found"
   },
+  "支付链接不存在或已过期": {
+    "zh": "支付链接不存在或已过期",
+    "en": "Payment link does not exist or has expired"
+  },
   "请检查链接是否正确": {
     "zh": "请检查链接是否正确",
     "en": "Please check if the link is correct"

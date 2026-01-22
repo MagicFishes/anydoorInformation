@@ -4,14 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Spin } from 'antd'
 
 const LoadingFallback = () => (
-  <div style={{ 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    height: '100vh' 
-  }}>
-    <Spin size="large" tip="加载中..." />
-  </div>
+  <Spin size="large" fullscreen tip="加载中..." />
 )
 
 const BasicLayout: React.FC = () => {

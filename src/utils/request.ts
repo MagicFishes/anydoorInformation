@@ -1,5 +1,5 @@
 import axios, { AxiosResponse, InternalAxiosRequestConfig, RawAxiosRequestHeaders } from 'axios'
-import { message } from 'antd'
+// import { message } from 'antd'
 
 interface ResponseType<T = any> {
   code: number
@@ -26,56 +26,74 @@ axiosInstance.interceptors.request.use(
     return config
   },
   (error) => {
-    message.error('请求发送失败')
-    return Promise.reject(error)
+    // return Promise.reject(error)
+    const { response } = error;
+    if(!response){
+        return Promise.reject(error);
+    }
+    // if (response.status === 401) {
+    //     removeStorage();
+    //     router.replace({ name: "login" });
+    //     // ElMessage.error(error.message);
+    //     message.error("登录会话已过期，请重新登录");
+    //     return Promise.reject(error);
+    // }
+    if (response && response.data) {
+        return Promise.reject(response.data);
+    }
+    const { message } = error;
+    console.error("message", message);
+
+    return Promise.reject(error);
   },
 )
 
 // 响应拦截器
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<any>) => {
-    const { code, message: msg, success } = response.data || {}
+    // const { code, message: msg, success } = response.data || {}
     
-    // 业务逻辑成功：支持 code === 200 或 code === "00000" 的情况
-    if (success && code === 200) {
-      return response
-    }
-    // 支持字符串 code "00000" 表示成功的情况
-    if (code === "00000" || code === 200) {
-      return response
-    }
+    // // 业务逻辑成功：支持 code === 200 或 code === "00000" 的情况
+    // if (success && code === 200) {
+    //   return response
+    // }
+    // // 支持字符串 code "00000" 表示成功的情况
+    // if (code === "00000" || code === 200) {
+    //   return response
+    // }
     
-    // 业务逻辑失败
-    // message.error(msg || '请求失败')
-    return Promise.reject((msg || '请求失败'))
+    // // 业务逻辑失败
+    // // message.error(msg || '请求失败')
+    // return Promise.reject(response)
+    return response
   },
   (error) => {
     // 网络错误或 HTTP 状态码错误
-    if (error.response) {
-      const status = error.response.status
-      switch (status) {
-        case 401:
-          message.error('未授权，请重新登录')
-          // 可以在这里处理跳转到登录页
-          // window.location.href = '/login'
-          break
-        case 403:
-          message.error('没有权限访问')
-          break
-        case 404:
-          message.error('请求的资源不存在')
-          break
-        case 500:
-          message.error('服务器错误，请稍后重试')
-          break
-        default:
-          message.error(error.response.data?.message || '请求失败')
-      }
-    } else if (error.request) {
-      message.error('网络连接失败，请检查网络')
-    } else {
-      message.error(error.message || '请求失败')
-    }
+    // if (error.response) {
+    //   const status = error.response.status
+    //   switch (status) {
+    //     case 401:
+    //       message.error('未授权，请重新登录')
+    //       // 可以在这里处理跳转到登录页
+    //       // window.location.href = '/login'
+    //       break
+    //     case 403:
+    //       message.error('没有权限访问')
+    //       break
+    //     case 404:
+    //       message.error('请求的资源不存在')
+    //       break
+    //     case 500:
+    //       message.error('服务器错误，请稍后重试')
+    //       break
+    //     default:
+    //       message.error(error.response.data?.message || '请求失败')
+    //   }
+    // } else if (error.request) {
+    //   message.error('网络连接失败，请检查网络')
+    // } else {
+    //   message.error(error.message || '请求失败')
+    // }
     
     return Promise.reject(error)
   }

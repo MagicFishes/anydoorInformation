@@ -301,6 +301,7 @@ export default function Home() {
       try {
         console.log('🔄 请求订单信息:', { requestLanguageCode, encodeOrderNo })
         const response = await HomeApi.queryOrderInfo(requestLanguageCode, encodeOrderNo)
+        console.log("response",response)
         const responseData = response.data as any
         console.log('✅ 订单信息响应:', responseData)
         
@@ -311,7 +312,8 @@ export default function Home() {
             return orderData as QueryOrderInfoRes['data']
           } else {
             if (showLoading) {
-              messageApi.error(t('获取订单信息失败，请检查链接是否正确'))
+              // 使用静态的 message.error，不受 React 19 并发模式限制
+              message.error(t('获取订单信息失败，请检查链接是否正确'))
             }
             setHasValidParams(false)
             // 数据为空时设置为过期状态
@@ -321,7 +323,9 @@ export default function Home() {
           }
         } else {
           // if (showLoading) {
-            messageApi.error(responseData.message)
+          const errorMsg = responseData?.message || '获取订单信息失败'
+          // 使用静态的 message.error，不受 React 19 并发模式限制
+          message.error(errorMsg)
           // }
           setHasValidParams(false)
           // 接口报错时设置为过期状态
@@ -331,8 +335,11 @@ export default function Home() {
         }
       } catch (error) {
         console.error('❌ 获取订单信息失败:', error)
-
-         console.log("4564654")
+        // 响应拦截器 reject 的是 response 对象，所以 error 是 response
+        // 如果是 response 对象，从 data 中获取错误信息
+        const errorMessage = (error as any)?.data?.message || (error as any)?.message || '获取订单信息失败'
+        // 使用静态的 message.error，不受 React 19 并发模式限制
+        message.error(errorMessage)
         if (showLoading) {
           setHasValidParams(false)
         }
@@ -791,7 +798,7 @@ export default function Home() {
       <div className="w-full min-h-screen flex flex-col items-center justify-center">
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="text-[24rem] font-bold mb-[20rem]">{t('页面不存在')}</div>
+          <div className="text-[24rem] font-bold mb-[20rem]">{t('支付链接不存在或已过期')}</div>
           <div className="text-[16rem] text-gray-400">{t('请检查链接是否正确')}</div>
         </div>
         <Footer />
@@ -1304,7 +1311,7 @@ export default function Home() {
                               const updatedOrderInfo = await fetchOrderInfoData(false)
                               if (updatedOrderInfo) {
                                 if (updatedOrderInfo.isGuarantee) {
-                                  messageApi.success(t('担保已完成！'))
+                                  // messageApi.success(t('担保已完成！'))
                                 } else {
                                   // messageApi.warning(t('担保尚未完成，请稍后再试'))
                                 }

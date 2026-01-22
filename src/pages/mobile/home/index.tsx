@@ -307,7 +307,8 @@ const MobileHome = () => {
             return orderData as QueryOrderInfoRes['data']
           } else {
             if (showLoading) {
-              messageApi.error(t('获取订单信息失败，请检查链接是否正确'))
+              // 使用静态的 message.error，不受 React 19 并发模式限制
+              message.error(t('获取订单信息失败，请检查链接是否正确'))
             }
             setHasValidParams(false)
             // 数据为空时设置为过期状态
@@ -316,9 +317,11 @@ const MobileHome = () => {
             return null
           }
         } else {
-          if (showLoading) {
-            messageApi.error(responseData.message)
-          }
+          // if (showLoading) {
+          const errorMsg = responseData?.message || '获取订单信息失败'
+          // 使用静态的 message.error，不受 React 19 并发模式限制
+          message.error(errorMsg)
+          // }
           setHasValidParams(false)
           // 接口报错时设置为过期状态
           setTimeExpired(true)
@@ -327,6 +330,11 @@ const MobileHome = () => {
         }
       } catch (error) {
         console.error('❌ 获取订单信息失败:', error)
+        // 响应拦截器 reject 的是 response 对象，所以 error 是 response
+        // 如果是 response 对象，从 data 中获取错误信息
+        const errorMessage = (error as any)?.data?.message || (error as any)?.message || '获取订单信息失败'
+        // 使用静态的 message.error，不受 React 19 并发模式限制
+        message.error(errorMessage)
         if (showLoading) {
           setHasValidParams(false)
         }
@@ -400,7 +408,7 @@ const MobileHome = () => {
       console.log('表单提交:', values)
 
       if (!orderInfo?.orderNo) {
-        messageApi.error(t('订单信息不存在，请刷新页面重试'))
+        message.error(t('订单信息不存在，请刷新页面重试'))
         return
       }
 
@@ -421,19 +429,19 @@ const MobileHome = () => {
         const updatedOrderInfo = await fetchOrderInfoData(false)
         if (updatedOrderInfo) {
           if (updatedOrderInfo.isGuarantee) {
-            messageApi.success(t('支付信息提交成功！'))
+            message.success(t('支付信息提交成功！'))
           } else {
-            messageApi.warning(t('担保信息尚未生效，请稍后再试'))
+            message.warning(t('担保信息尚未生效，请稍后再试'))
           }
         } else {
-          messageApi.error(t('获取订单信息失败，请重试'))
+          message.error(t('获取订单信息失败，请重试'))
         }
       } else {
-        messageApi.error(responseData.message || t('支付提交失败，请重试'))
+        message.error(responseData.message || t('支付提交失败，请重试'))
       }
     } catch (error: any) {
       console.error('支付提交失败:', error)
-      messageApi.error(error?.message || t('支付提交失败，请重试'))
+      message.error(error?.message || t('支付提交失败，请重试'))
     } finally {
       setIsSubmitting(false)
     }
@@ -543,12 +551,12 @@ const MobileHome = () => {
         timeExpiredRef.current = false
         return true
       } else {
-        messageApi.error(responseData.message || t('获取支付二维码失败'))
+        message.error(responseData.message || t('获取支付二维码失败'))
         return false
       }
     } catch (error: any) {
       console.error('获取支付二维码失败:', error)
-      messageApi.error(error?.message || t('获取支付二维码失败，请重试'))
+      message.error(error?.message || t('获取支付二维码失败，请重试'))
       return false
     } finally {
       setQrCodeLoading(false)
@@ -785,7 +793,7 @@ const MobileHome = () => {
       <div className="w-full min-h-screen flex flex-col items-center justify-center">
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="text-[24rem] font-bold mb-[20rem]">{t('页面不存在')}</div>
+          <div className="text-[24rem] font-bold mb-[20rem]">{t('支付链接不存在或已过期')}</div>
           <div className="text-[16rem] text-gray-400">{t('请检查链接是否正确')}</div>
         </div>
         <Footer />
@@ -977,7 +985,7 @@ const MobileHome = () => {
                                 onClick={async () => {
                                   const success = await fetchQrCode()
                                   if (success) {
-                                    messageApi.success(t('二维码已更新'))
+                                    message.success(t('二维码已更新'))
                                   }
                                 }}
                                 className="h-[30rem] text-[12rem]"
@@ -1005,7 +1013,7 @@ const MobileHome = () => {
                                 onClick={async () => {
                                   const success = await fetchQrCode()
                                   if (success) {
-                                    messageApi.success(t('二维码已更新'))
+                                    message.success(t('二维码已更新'))
                                   }
                                 }}
                                 className="h-[30rem] text-[12rem]"
@@ -1074,7 +1082,7 @@ const MobileHome = () => {
                               onClick={async () => {
                                 const success = await fetchQrCode()
                                 if (success) {
-                                  messageApi.success(t('支付链接已更新'))
+                                  message.success(t('支付链接已更新'))
                                 }
                               }}
                               className="h-[30rem] text-[12rem] bg-[#0d99ff] border-[#0d99ff]"
@@ -1189,7 +1197,7 @@ const MobileHome = () => {
                           const updatedOrderInfo = await fetchOrderInfoData(false)
                           if (updatedOrderInfo) {
                             if (updatedOrderInfo.isGuarantee) {
-                              messageApi.success(t('担保已完成！'))
+                              // messageApi.success(t('担保已完成！'))
                             } else {
                               // messageApi.warning(t('担保尚未完成，请稍后再试'))
                             }
@@ -1237,13 +1245,13 @@ const MobileHome = () => {
                         if (updatedOrderInfo) {
                           // 根据获取到的订单信息验证支付状态
                           if (updatedOrderInfo.payState === 'SUCCESS') {
-                            messageApi.success(t('支付完成！'))
+                            message.success(t('支付完成！'))
                             // 订单状态会通过 useEffect 自动更新 successType
                           } else {
-                            messageApi.warning(t('支付尚未完成，请稍后再试'))
+                            message.warning(t('支付尚未完成，请稍后再试'))
                           }
                         } else {
-                          messageApi.error(t('获取订单信息失败，请重试'))
+                          message.error(t('获取订单信息失败，请重试'))
                         }
                       }}
                     >
